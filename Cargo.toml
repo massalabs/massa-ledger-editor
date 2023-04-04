@@ -1,0 +1,13 @@
+[package]
+name = "massa-ledger-editor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+structopt = { version = "0.3", default-features = false }
+paw = "1.0"
+# massa exports
+massa_models = { git = "https://github.com/massalabs/massa", package = "massa_models" }
+massa_hash = { git = "https://github.com/massalabs/massa", package = "massa_hash" }
+massa_ledger_exports = { git = "https://github.com/massalabs/massa", package = "massa_ledger_exports" }
+massa_ledger_worker = { git = "https://github.com/massalabs/massa", package = "massa_ledger_worker" }
