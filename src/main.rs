@@ -1,5 +1,5 @@
 use massa_db_exports::{
-    DBBatch, MassaDBController, MassaIteratorMode, ShareableMassaDBController, LEDGER_PREFIX,
+    DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX,
 };
 use massa_final_state::FinalState;
 use massa_ledger_editor::{
@@ -16,19 +16,27 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
+    // path is used to open an existing db
     #[structopt(short, long)]
     path: PathBuf,
+    // output_path is used to create a new db (only when using convert_from_testnet22_ledger_to_testnet23_ledger)
+    #[structopt(short, long)]
+    output_path: PathBuf,
 }
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
-fn convert_from_testnet22_ledger_to_testnet23_ledger(db: ShareableMassaDBController) {
+fn convert_from_testnet22_ledger_to_testnet23_ledger(old_final_state: Arc<RwLock<FinalState>>, new_final_state: Arc<RwLock<FinalState>>) {
+
+    let old_db = old_final_state.read().db.clone();
+    let new_db = new_final_state.read().db.clone();
+
     let old_ledger_cf = "ledger";
 
     let mut state_batch = DBBatch::new();
     let versioning_batch = DBBatch::new();
 
-    for (old_serialized_key, old_serialized_value) in db
+    for (old_serialized_key, old_serialized_value) in old_db
         .read()
         .iterator_cf(old_ledger_cf, MassaIteratorMode::Start)
     {
@@ -36,22 +44,21 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(db: ShareableMassaDBControl
         new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
         new_serialized_key.extend_from_slice(&old_serialized_key);
 
-        db.read().put_or_update_entry_value(
+        new_db.read().put_or_update_entry_value(
             &mut state_batch,
             new_serialized_key,
             &old_serialized_value,
         );
     }
 
-    db.write().write_batch(state_batch, versioning_batch, None);
-    db.write().delete_prefix("", old_ledger_cf, None);
+    new_final_state.write().db.write().write_batch(state_batch, versioning_batch, None);
 }
 
 fn main() {
     let args = Args::from_args();
 
     // Set up the following flags depending on what we want to do.
-    let convert_ledger = false;
+    let convert_ledger = true;
     let edit_ledger = false;
     let scan_ledger = false;
 
@@ -85,7 +92,33 @@ fn main() {
 
     // Edit section - Conversion from testnet22 to testnet23 ledger
     if convert_ledger {
-        convert_from_testnet22_ledger_to_testnet23_ledger(db.clone());
+        let new_db_config = get_db_config(args.output_path.clone());
+        let new_ledger_config = get_ledger_config(args.output_path.clone());
+        let new_final_state_config = get_final_state_config(args.output_path);
+        let new_mip_stats_config = get_mip_stats_config();
+
+        let new_wrapped_db = WrappedMassaDB::new(new_db_config, false);
+        let new_db = Arc::new(RwLock::new(
+            Box::new(new_wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
+        ));
+    
+        let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
+        let new_mip_store =
+            MipStore::try_from((MIP_LIST, new_mip_stats_config)).expect("mip store creation failed");
+        let (new_selector_controller, _new_selector_receiver) = MockSelectorController::new_with_receiver();
+        let new_final_state = Arc::new(parking_lot::RwLock::new(
+            FinalState::new(
+                new_db.clone(),
+                new_final_state_config,
+                Box::new(new_ledger),
+                new_selector_controller.clone(),
+                new_mip_store,
+                true,
+            )
+            .expect("could not init final state"),
+        ));
+
+        convert_from_testnet22_ledger_to_testnet23_ledger(final_state.clone(), new_final_state.clone());
     }
 
     // Edit section - Manual edits on the ledger or on the final_state
