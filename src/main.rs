@@ -3,10 +3,11 @@ use massa_final_state::FinalState;
 use massa_ledger_editor::{
     get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, WrappedMassaDB,
 };
-use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
+use massa_ledger_exports::{KeyDeserializer, LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
 use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
 use massa_pos_exports::test_exports::MockSelectorController;
+use massa_serialization::{DeserializeError, Deserializer};
 use massa_versioning::{mips::MIP_LIST, versioning::MipStore};
 use parking_lot::RwLock;
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
@@ -38,6 +39,8 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
 
     let mut total_count = 0;
     let mut valid_count = 0;
+    let mut sc_addr_count = 0;
+    let mut user_addr_count = 0;
     for (old_serialized_key, old_serialized_value) in old_db
         .read()
         .iterator_cf(old_ledger_cf, MassaIteratorMode::Start)
@@ -45,14 +48,30 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
         total_count += 1;
         let mut new_serialized_key = Vec::new();
         new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
-        new_serialized_key.extend_from_slice(&[0u8]);
-        new_serialized_key.extend_from_slice(&old_serialized_key);
+        new_serialized_key.extend_from_slice(&old_serialized_key[0..2]);
+        new_serialized_key.push(0u8);
+        new_serialized_key.extend_from_slice(&old_serialized_key[2..]);
 
         if new_final_state
             .read()
             .ledger
             .is_key_value_valid(&new_serialized_key, &old_serialized_value)
         {
+            let key_deser = KeyDeserializer::new(255, false);
+
+            let (rest, key) = key_deser
+                .deserialize::<DeserializeError>(&new_serialized_key)
+                .unwrap();
+
+            match key.address {
+                Address::User(_) => {
+                    user_addr_count += 1;
+                }
+                Address::SC(_) => {
+                    sc_addr_count += 1;
+                }
+            }
+
             valid_count += 1;
             new_db.read().put_or_update_entry_value(
                 &mut state_batch,
@@ -64,6 +83,8 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
 
     println!("Total key/value count: {}", total_count);
     println!("Valid key/value count: {}", valid_count);
+    println!("UserAddress key/value count: {}", user_addr_count);
+    println!("SCAddress key/value count: {}", sc_addr_count);
 
     new_final_state
         .write()

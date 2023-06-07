@@ -21,6 +21,7 @@ massa_executed_ops = { git = "https://github.com/massalabs/massa", rev = "c8796e
 massa_pos_exports = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_pos_exports", features = ["testing"] }
 massa_versioning = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_versioning" }
 massa_db_worker = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_db_worker"}
+massa_serialization = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_serialization"}
 
 # /!\ Todo: use branch testnet_24 everywhere instead /!\
 # Cf: https://github.com/massalabs/massa/pull/4054
