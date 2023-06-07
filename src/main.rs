@@ -31,21 +31,22 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
 ) {
     let old_db = old_final_state.read().db.clone();
     let new_db = new_final_state.read().db.clone();
-
     let old_ledger_cf = "ledger";
 
+    let mut batches = Vec::new();
     let mut state_batch = DBBatch::new();
-    let versioning_batch = DBBatch::new();
-
+    let mut versioning_batch = DBBatch::new();
+    let max_keys_per_batch = 10000;
+    let mut cur_count = 0;
     let mut total_count = 0;
     let mut valid_count = 0;
     let mut sc_addr_count = 0;
     let mut user_addr_count = 0;
+
     for (old_serialized_key, old_serialized_value) in old_db
         .read()
         .iterator_cf(old_ledger_cf, MassaIteratorMode::Start)
     {
-        total_count += 1;
         let mut new_serialized_key = Vec::new();
         new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
         new_serialized_key.extend_from_slice(&old_serialized_key[0..2]);
@@ -78,13 +79,27 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
                 }
             }
 
-            valid_count += 1;
+            if cur_count >= max_keys_per_batch {
+                batches.push((state_batch, versioning_batch));
+                state_batch = DBBatch::new();
+                versioning_batch = DBBatch::new();
+                cur_count = 0;
+            }
+
             new_db.read().put_or_update_entry_value(
                 &mut state_batch,
                 new_serialized_key,
                 &old_serialized_value,
             );
+
+            valid_count += 1;
+            total_count += 1;
+            cur_count += 1;
         }
+    }
+
+    if cur_count > 0 {
+        batches.push((state_batch, versioning_batch));
     }
 
     println!("Total key/value count: {}", total_count);
@@ -92,11 +107,25 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
     println!("UserAddress key/value count: {}", user_addr_count);
     println!("SCAddress key/value count: {}", sc_addr_count);
 
-    new_final_state
-        .write()
-        .db
-        .write()
-        .write_batch(state_batch, versioning_batch, None);
+    let batches_len = batches.len();
+    for (i, (state_batch, versioning_batch)) in batches.into_iter().enumerate() {
+        new_final_state
+            .write()
+            .db
+            .write()
+            .write_batch(state_batch, versioning_batch, None);
+        println!(
+            "Batch {} of {} written (current key: {})",
+            i + 1,
+            batches_len,
+            if i + 1 != batches_len {
+                (i + 1) * max_keys_per_batch
+            } else {
+                total_count
+            }
+        );
+    }
+    new_final_state.write().db.write().flush().unwrap();
 }
 
 fn main() {
