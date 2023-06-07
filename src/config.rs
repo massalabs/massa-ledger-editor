@@ -76,11 +76,20 @@ pub fn get_mip_stats_config() -> MipStatsConfig {
 }
 
 pub fn get_final_state_config(path: PathBuf) -> FinalStateConfig {
-    let ledger_config = get_ledger_config(path);
+    let ledger_config = get_ledger_config(path.clone());
     let async_pool_config = get_async_pool_config();
     let pos_config = get_pos_config();
     let executed_ops_config = get_executed_ops_config();
     let executed_denunciations_config = get_executed_denunciations_config();
+    let initial_rolls_path = path
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("base_config")
+        .join("initial_rolls.json");
     FinalStateConfig {
         ledger_config,
         async_pool_config,
@@ -91,7 +100,7 @@ pub fn get_final_state_config(path: PathBuf) -> FinalStateConfig {
         thread_count: THREAD_COUNT,
         periods_per_cycle: PERIODS_PER_CYCLE,
         initial_seed_string: INITIAL_DRAW_SEED.into(),
-        initial_rolls_path: "".into(),
+        initial_rolls_path,
         endorsement_count: ENDORSEMENT_COUNT,
         max_executed_denunciations_length: MAX_DENUNCIATION_CHANGES_LENGTH,
         max_denunciations_per_block_header: MAX_DENUNCIATIONS_PER_BLOCK_HEADER,

@@ -1,6 +1,4 @@
-use massa_db_exports::{
-    DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX,
-};
+use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
 use massa_final_state::FinalState;
 use massa_ledger_editor::{
     get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, WrappedMassaDB,
@@ -26,8 +24,10 @@ pub struct Args {
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
-fn convert_from_testnet22_ledger_to_testnet23_ledger(old_final_state: Arc<RwLock<FinalState>>, new_final_state: Arc<RwLock<FinalState>>) {
-
+fn convert_from_testnet22_ledger_to_testnet23_ledger(
+    old_final_state: Arc<RwLock<FinalState>>,
+    new_final_state: Arc<RwLock<FinalState>>,
+) {
     let old_db = old_final_state.read().db.clone();
     let new_db = new_final_state.read().db.clone();
 
@@ -51,7 +51,11 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(old_final_state: Arc<RwLock
         );
     }
 
-    new_final_state.write().db.write().write_batch(state_batch, versioning_batch, None);
+    new_final_state
+        .write()
+        .db
+        .write()
+        .write_batch(state_batch, versioning_batch, None);
 }
 
 fn main() {
@@ -85,7 +89,7 @@ fn main() {
             Box::new(ledger),
             selector_controller.clone(),
             mip_store,
-            true,
+            false,
         )
         .expect("could not init final state"),
     ));
@@ -101,11 +105,12 @@ fn main() {
         let new_db = Arc::new(RwLock::new(
             Box::new(new_wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
         ));
-    
+
         let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
-        let new_mip_store =
-            MipStore::try_from((MIP_LIST, new_mip_stats_config)).expect("mip store creation failed");
-        let (new_selector_controller, _new_selector_receiver) = MockSelectorController::new_with_receiver();
+        let new_mip_store = MipStore::try_from((MIP_LIST, new_mip_stats_config))
+            .expect("mip store creation failed");
+        let (new_selector_controller, _new_selector_receiver) =
+            MockSelectorController::new_with_receiver();
         let new_final_state = Arc::new(parking_lot::RwLock::new(
             FinalState::new(
                 new_db.clone(),
@@ -113,12 +118,12 @@ fn main() {
                 Box::new(new_ledger),
                 new_selector_controller.clone(),
                 new_mip_store,
-                true,
+                false,
             )
             .expect("could not init final state"),
         ));
 
-        convert_from_testnet22_ledger_to_testnet23_ledger(final_state.clone(), new_final_state.clone());
+        convert_from_testnet22_ledger_to_testnet23_ledger(final_state.clone(), new_final_state);
     }
 
     // Edit section - Manual edits on the ledger or on the final_state
