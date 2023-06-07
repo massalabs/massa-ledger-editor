@@ -64,11 +64,17 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
                 .unwrap();
 
             match key.address {
-                Address::User(_) => {
+                Address::User(addr) => {
                     user_addr_count += 1;
+                    if user_addr_count <= 5 {
+                        println!("User address: {}", addr)
+                    }
                 }
-                Address::SC(_) => {
+                Address::SC(addr) => {
                     sc_addr_count += 1;
+                    if sc_addr_count <= 5 {
+                        println!("SC address: {}", addr)
+                    }
                 }
             }
 
