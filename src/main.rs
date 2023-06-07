@@ -1,8 +1,9 @@
-use massa_db_exports::{DBBatch, MassaDBController, ShareableMassaDBController};
-use massa_db_worker::MassaDB;
+use massa_db_exports::{
+    DBBatch, MassaDBController, MassaIteratorMode, ShareableMassaDBController, LEDGER_PREFIX,
+};
 use massa_final_state::FinalState;
 use massa_ledger_editor::{
-    get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config,
+    get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, WrappedMassaDB,
 };
 use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
@@ -22,7 +23,28 @@ pub struct Args {
 #[allow(dead_code)]
 #[allow(unused_variables)]
 fn convert_from_testnet22_ledger_to_testnet23_ledger(db: ShareableMassaDBController) {
-    todo!();
+    let old_ledger_cf = "ledger";
+
+    let mut state_batch = DBBatch::new();
+    let versioning_batch = DBBatch::new();
+
+    for (old_serialized_key, old_serialized_value) in db
+        .read()
+        .iterator_cf(old_ledger_cf, MassaIteratorMode::Start)
+    {
+        let mut new_serialized_key = Vec::new();
+        new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
+        new_serialized_key.extend_from_slice(&old_serialized_key);
+
+        db.read().put_or_update_entry_value(
+            &mut state_batch,
+            new_serialized_key,
+            &old_serialized_value,
+        );
+    }
+
+    db.write().write_batch(state_batch, versioning_batch, None);
+    db.write().delete_prefix("", old_ledger_cf, None);
 }
 
 fn main() {
@@ -40,9 +62,11 @@ fn main() {
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
+    let wrapped_db = WrappedMassaDB::new(db_config, convert_ledger);
     let db = Arc::new(RwLock::new(
-        Box::new(MassaDB::new(db_config)) as Box<(dyn MassaDBController + 'static)>
+        Box::new(wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
     ));
+
     let ledger = FinalLedger::new(ledger_config, db.clone());
     let mip_store =
         MipStore::try_from((MIP_LIST, mip_stats_config)).expect("mip store creation failed");
