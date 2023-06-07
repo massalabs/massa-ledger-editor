@@ -36,20 +36,34 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
     let mut state_batch = DBBatch::new();
     let versioning_batch = DBBatch::new();
 
+    let mut total_count = 0;
+    let mut valid_count = 0;
     for (old_serialized_key, old_serialized_value) in old_db
         .read()
         .iterator_cf(old_ledger_cf, MassaIteratorMode::Start)
     {
+        total_count += 1;
         let mut new_serialized_key = Vec::new();
         new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
+        new_serialized_key.extend_from_slice(&[0u8]);
         new_serialized_key.extend_from_slice(&old_serialized_key);
 
-        new_db.read().put_or_update_entry_value(
-            &mut state_batch,
-            new_serialized_key,
-            &old_serialized_value,
-        );
+        if new_final_state
+            .read()
+            .ledger
+            .is_key_value_valid(&new_serialized_key, &old_serialized_value)
+        {
+            valid_count += 1;
+            new_db.read().put_or_update_entry_value(
+                &mut state_batch,
+                new_serialized_key,
+                &old_serialized_value,
+            );
+        }
     }
+
+    println!("Total key/value count: {}", total_count);
+    println!("Valid key/value count: {}", valid_count);
 
     new_final_state
         .write()
