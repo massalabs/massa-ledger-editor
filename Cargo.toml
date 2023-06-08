@@ -9,30 +9,17 @@ paw = "1.0"
 parking_lot = { version = "0.12", features = ["deadlock_detection"] }
 rocksdb = "0.20"
 lsmtree = "=0.1.1"
-# massa exports
-massa_models = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_models" }
-massa_hash = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_hash" }
-massa_ledger_exports = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_ledger_exports" }
-massa_ledger_worker = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_ledger_worker" }
-massa_db_exports = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_db_exports" }
-massa_final_state = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_final_state" }
-massa_async_pool = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_async_pool" }
-massa_executed_ops = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_executed_ops" }
-massa_pos_exports = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_pos_exports", features = ["testing"] }
-massa_versioning = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_versioning" }
-massa_db_worker = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_db_worker"}
-massa_serialization = { git = "https://github.com/massalabs/massa", rev = "c8796e768599676658572d8499162a4972b04a75", package = "massa_serialization"}
 
-# /!\ Todo: use branch testnet_24 everywhere instead /!\
-# Cf: https://github.com/massalabs/massa/pull/4054
-#massa_models = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_models" }
-#massa_hash = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_hash" }
-#massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_ledger_exports" }
-#massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_ledger_worker" }
-#massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_db_exports" }
-#massa_final_state = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_final_state" }
-#massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_async_pool" }
-#massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_executed_ops" }
-#massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_pos_exports", features = ["testing"] }
-#massa_versioning = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_versioning" }
-#massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_db_worker"}
+# massa exports
+massa_models = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_models" }
+massa_hash = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_hash" }
+massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_ledger_exports" }
+massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_ledger_worker" }
+massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_db_exports" }
+massa_final_state = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_final_state" }
+massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_async_pool" }
+massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_executed_ops" }
+massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_pos_exports", features = ["testing"] }
+massa_versioning = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_versioning" }
+massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_db_worker"}
+massa_serialization = { git = "https://github.com/massalabs/massa", branch = "testnet_24", package = "massa_serialization"}
