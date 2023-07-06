@@ -9,11 +9,12 @@ use massa_models::config::{
     MAX_DATASTORE_KEY_LENGTH, MAX_DATASTORE_VALUE_LENGTH, MAX_DEFERRED_CREDITS_LENGTH,
     MAX_DENUNCIATIONS_PER_BLOCK_HEADER, MAX_DENUNCIATION_CHANGES_LENGTH,
     MAX_PRODUCTION_STATS_LENGTH, MAX_ROLLS_COUNT_LENGTH, MIP_STORE_STATS_BLOCK_CONSIDERED,
-    MIP_STORE_STATS_COUNTERS_MAX, PERIODS_PER_CYCLE, POS_SAVED_CYCLES, T0, THREAD_COUNT,
+    PERIODS_PER_CYCLE, POS_SAVED_CYCLES, T0, THREAD_COUNT,
 };
 use massa_pos_exports::PoSConfig;
 use massa_versioning::versioning::MipStatsConfig;
 use std::path::PathBuf;
+use num::rational::Ratio;
 
 pub fn get_db_config(path: PathBuf) -> MassaDBConfig {
     MassaDBConfig {
@@ -71,7 +72,7 @@ fn get_executed_denunciations_config() -> ExecutedDenunciationsConfig {
 pub fn get_mip_stats_config() -> MipStatsConfig {
     MipStatsConfig {
         block_count_considered: MIP_STORE_STATS_BLOCK_CONSIDERED,
-        counters_max: MIP_STORE_STATS_COUNTERS_MAX,
+        warn_announced_version_ratio: Ratio::new(3, 10),
     }
 }
 

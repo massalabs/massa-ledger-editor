@@ -1,16 +1,15 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
     sync::Arc,
 };
 
-use lsmtree::SparseMerkleTree;
 use massa_db_exports::{
-    MassaDBConfig, CF_ERROR, CRUD_ERROR, LSMTREE_NODES_CF, LSMTREE_VALUES_CF, METADATA_CF,
-    OPEN_ERROR, STATE_CF, STATE_HASH_KEY, VERSIONING_CF,
+    MassaDBConfig, METADATA_CF,
+    OPEN_ERROR, STATE_CF, VERSIONING_CF,
 };
-use massa_db_worker::{MassaDB, MassaDbLsmtree};
+use massa_db_worker::MassaDB;
 use massa_models::slot::{Slot, SlotDeserializer, SlotSerializer};
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use rocksdb::{ColumnFamilyDescriptor, Options, WriteBatch, DB};
 use std::ops::Bound::{Excluded, Included};
 
@@ -31,8 +30,6 @@ impl WrappedMassaDB {
                     ColumnFamilyDescriptor::new(STATE_CF, Options::default()),
                     ColumnFamilyDescriptor::new("ledger", Options::default()),
                     ColumnFamilyDescriptor::new(METADATA_CF, Options::default()),
-                    ColumnFamilyDescriptor::new(LSMTREE_NODES_CF, Options::default()),
-                    ColumnFamilyDescriptor::new(LSMTREE_VALUES_CF, Options::default()),
                     ColumnFamilyDescriptor::new(VERSIONING_CF, Options::default()),
                 ],
             )
@@ -44,45 +41,20 @@ impl WrappedMassaDB {
                 vec![
                     ColumnFamilyDescriptor::new(STATE_CF, Options::default()),
                     ColumnFamilyDescriptor::new(METADATA_CF, Options::default()),
-                    ColumnFamilyDescriptor::new(LSMTREE_NODES_CF, Options::default()),
-                    ColumnFamilyDescriptor::new(LSMTREE_VALUES_CF, Options::default()),
                     ColumnFamilyDescriptor::new(VERSIONING_CF, Options::default()),
                 ],
             )
             .expect(OPEN_ERROR)
         };
 
-        let db = Arc::new(db);
 
+        let db = Arc::new(db);
         let current_batch = Arc::new(Mutex::new(WriteBatch::default()));
-        let current_hashmap = Arc::new(RwLock::new(HashMap::new()));
 
         let change_id_deserializer = SlotDeserializer::new(
             (Included(u64::MIN), Included(u64::MAX)),
             (Included(0), Excluded(config.thread_count)),
         );
-
-        let nodes_store = MassaDbLsmtree::new(
-            LSMTREE_NODES_CF,
-            db.clone(),
-            current_batch.clone(),
-            current_hashmap.clone(),
-        );
-        let values_store = MassaDbLsmtree::new(
-            LSMTREE_VALUES_CF,
-            db.clone(),
-            current_batch.clone(),
-            current_hashmap.clone(),
-        );
-
-        let handle_metadata = db.cf_handle(METADATA_CF).expect(CF_ERROR);
-        let lsmtree = match db
-            .get_cf(handle_metadata, STATE_HASH_KEY)
-            .expect(CRUD_ERROR)
-        {
-            Some(hash_bytes) => SparseMerkleTree::import(nodes_store, values_store, hash_bytes),
-            _ => SparseMerkleTree::new_with_stores(nodes_store, values_store),
-        };
 
         let massa_db = MassaDB {
             db,
@@ -91,9 +63,7 @@ impl WrappedMassaDB {
             change_history_versioning: BTreeMap::new(),
             change_id_serializer: SlotSerializer::new(),
             change_id_deserializer,
-            lsmtree,
             current_batch,
-            current_hashmap,
         };
 
         if massa_db.get_change_id().is_err() {
