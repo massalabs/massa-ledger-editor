@@ -13,6 +13,8 @@ use massa_serialization::{DeserializeError, Deserializer};
 use massa_versioning::{mips::get_mip_list, versioning::MipStore};
 use parking_lot::RwLock;
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
+use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
+use massa_models::slot::Slot;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -23,6 +25,12 @@ pub struct Args {
     // output_path is used to create a new db (only when using convert_from_testnet22_ledger_to_testnet23_ledger)
     #[structopt(short, long)]
     output_path: PathBuf,
+    #[structopt(short, long)]
+    update_mip_store: bool,
+    #[structopt(long)]
+    shutdown_start: Option<u64>,
+    #[structopt(long)]
+    shutdown_end: Option<u64>,
 }
 
 const OLD_IDENT_BYTE_INDEX: usize = 34; // place of the ident byte
@@ -194,9 +202,10 @@ fn main() {
     let args = Args::from_args();
 
     // Set up the following flags depending on what we want to do.
-    let convert_ledger = true;
+    let convert_ledger = false;
     let edit_ledger = false;
     let scan_ledger = false;
+    let update_mip_store = args.update_mip_store;
 
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
@@ -292,4 +301,20 @@ fn main() {
         );
         println!("{:#?}", balance);
     }
+
+    if update_mip_store {
+        let mut guard = final_state.write();
+        // TODO: pass slot start / slot end as args?
+        let shutdown_start: Slot = Slot::new(args.shutdown_start.unwrap(), 0);
+        let shutdown_end: Slot = Slot::new(args.shutdown_end.unwrap(), 0);
+        guard
+            .mip_store
+            .update_for_network_shutdown(shutdown_start,
+                                         shutdown_end,
+                                         THREAD_COUNT,
+                                         T0,
+                                         *GENESIS_TIMESTAMP)
+            .expect("Cannot update MIP store");
+    }
+
 }
