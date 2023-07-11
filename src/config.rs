@@ -76,21 +76,26 @@ pub fn get_mip_stats_config() -> MipStatsConfig {
     }
 }
 
-pub fn get_final_state_config(path: PathBuf) -> FinalStateConfig {
+pub fn get_final_state_config(path: PathBuf, initial_rolls_path: Option<PathBuf>) -> FinalStateConfig {
     let ledger_config = get_ledger_config(path.clone());
     let async_pool_config = get_async_pool_config();
     let pos_config = get_pos_config();
     let executed_ops_config = get_executed_ops_config();
     let executed_denunciations_config = get_executed_denunciations_config();
-    let initial_rolls_path = path
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("base_config")
-        .join("initial_rolls.json");
+
+    let initial_rolls_path = match initial_rolls_path {
+        Some(p) => p,
+        None => todo!()
+    };
+    // let initial_rolls_path = path
+    //     .parent()
+    //     .unwrap()
+    //     .parent()
+    //     .unwrap()
+    //     .parent()
+    //     .unwrap()
+    //     .join("base_config")
+    //     .join("initial_rolls.json");
     FinalStateConfig {
         ledger_config,
         async_pool_config,

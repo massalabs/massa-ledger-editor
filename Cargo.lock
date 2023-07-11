@@ -1230,7 +1230,7 @@ dependencies = [
 [[package]]
 name = "massa_async_pool"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "massa-proto-rs",
  "massa_db_exports",
@@ -1250,7 +1250,7 @@ dependencies = [
 [[package]]
 name = "massa_db_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "displaydoc",
  "massa_hash",
@@ -1263,7 +1263,7 @@ dependencies = [
 [[package]]
 name = "massa_db_worker"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "lsmtree",
  "massa_db_exports",
@@ -1277,7 +1277,7 @@ dependencies = [
 [[package]]
 name = "massa_executed_ops"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "massa_db_exports",
  "massa_hash",
@@ -1290,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "massa_final_state"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "bs58",
  "displaydoc",
@@ -1315,7 +1315,7 @@ dependencies = [
 [[package]]
 name = "massa_hash"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "blake3",
  "bs58",
@@ -1331,7 +1331,7 @@ dependencies = [
 [[package]]
 name = "massa_ledger_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "displaydoc",
  "massa-proto-rs",
@@ -1349,7 +1349,7 @@ dependencies = [
 [[package]]
 name = "massa_ledger_worker"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "massa_db_exports",
  "massa_ledger_exports",
@@ -1361,7 +1361,7 @@ dependencies = [
 [[package]]
 name = "massa_models"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "bitvec",
  "bs58",
@@ -1387,7 +1387,7 @@ dependencies = [
 [[package]]
 name = "massa_pos_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "bitvec",
  "crossbeam-channel",
@@ -1410,7 +1410,7 @@ dependencies = [
 [[package]]
 name = "massa_serialization"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "displaydoc",
  "nom",
@@ -1422,7 +1422,7 @@ dependencies = [
 [[package]]
 name = "massa_signature"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "bs58",
  "displaydoc",
@@ -1439,7 +1439,7 @@ dependencies = [
 [[package]]
 name = "massa_time"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "displaydoc",
  "massa_serialization",
@@ -1452,7 +1452,7 @@ dependencies = [
 [[package]]
 name = "massa_versioning"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?rev=813b108#813b1083c79061e126c97ec4733c729bae147993"
+source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#fe26ca8965582575e64334913c6e14217f08c8af"
 dependencies = [
  "machine",
  "massa-proto-rs",

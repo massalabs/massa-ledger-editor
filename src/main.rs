@@ -26,6 +26,8 @@ pub struct Args {
     #[structopt(short, long)]
     output_path: PathBuf,
     #[structopt(short, long)]
+    initial_rolls_path: PathBuf,
+    #[structopt(short, long)]
     update_mip_store: bool,
     #[structopt(long)]
     shutdown_start: Option<u64>,
@@ -210,7 +212,7 @@ fn main() {
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
     let ledger_config = get_ledger_config(args.path.clone());
-    let final_state_config = get_final_state_config(args.path);
+    let final_state_config = get_final_state_config(args.path, Some(args.initial_rolls_path.clone()));
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
@@ -239,7 +241,7 @@ fn main() {
     if convert_ledger {
         let new_db_config = get_db_config(args.output_path.clone());
         let new_ledger_config = get_ledger_config(args.output_path.clone());
-        let new_final_state_config = get_final_state_config(args.output_path);
+        let new_final_state_config = get_final_state_config(args.output_path, Some(args.initial_rolls_path));
         let new_mip_stats_config = get_mip_stats_config();
 
         let new_wrapped_db = WrappedMassaDB::new(new_db_config, false);
