@@ -304,9 +304,12 @@ fn main() {
 
     if update_mip_store {
         let mut guard = final_state.write();
-        // TODO: pass slot start / slot end as args?
         let shutdown_start: Slot = Slot::new(args.shutdown_start.unwrap(), 0);
         let shutdown_end: Slot = Slot::new(args.shutdown_end.unwrap(), 0);
+
+        println!("shut start: {}", shutdown_start);
+        println!("shut end: {}", shutdown_end);
+
         guard
             .mip_store
             .update_for_network_shutdown(shutdown_start,
@@ -315,6 +318,20 @@ fn main() {
                                          T0,
                                          *GENESIS_TIMESTAMP)
             .expect("Cannot update MIP store");
+
+        let mut db_batch = DBBatch::new();
+        let mut db_versioning_batch = DBBatch::new();
+        guard
+            .mip_store
+            .update_batches(&mut db_batch, &mut db_versioning_batch, None)
+            .expect("Cannot get batches in order to write MIP store");
+
+        println!("db_batch len: {}", db_batch.len());
+        println!("db_vers_batch len: {}", db_versioning_batch.len());
+
+        guard.db.write().write_batch(db_batch, db_versioning_batch, None);
+
+        println!("Writing done...");
     }
 
 }
