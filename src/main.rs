@@ -15,6 +15,7 @@ use parking_lot::RwLock;
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
 use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
 use massa_models::slot::Slot;
+use massa_time::MassaTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -33,6 +34,8 @@ pub struct Args {
     shutdown_start: Option<u64>,
     #[structopt(long)]
     shutdown_end: Option<u64>,
+    #[structopt(long)]
+    genesis_timestamp: Option<u64>,
 }
 
 const OLD_IDENT_BYTE_INDEX: usize = 34; // place of the ident byte
@@ -322,14 +325,19 @@ fn main() {
         println!("shut start: {}", shutdown_start);
         println!("shut end: {}", shutdown_end);
 
-        // println!("Calling update_for_network_shutdown...");
+        let genesis_timestamp = match args.genesis_timestamp {
+            Some(ts) => MassaTime::from_millis(ts),
+            None => *GENESIS_TIMESTAMP,
+        }
+        println!("Genesis ts: {}", genesis_timestamp);
+
         guard
             .mip_store
             .update_for_network_shutdown(shutdown_start,
                                          shutdown_end,
                                          THREAD_COUNT,
                                          T0,
-                                         *GENESIS_TIMESTAMP)
+                                         genesis_timestamp)
             .expect("Cannot update MIP store");
 
         let mut db_batch = DBBatch::new();
