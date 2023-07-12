@@ -328,7 +328,7 @@ fn main() {
         let genesis_timestamp = match args.genesis_timestamp {
             Some(ts) => MassaTime::from_millis(ts),
             None => *GENESIS_TIMESTAMP,
-        }
+        };
         println!("Genesis ts: {}", genesis_timestamp);
 
         guard
