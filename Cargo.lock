@@ -1230,7 +1230,6 @@ dependencies = [
 [[package]]
 name = "massa_async_pool"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "massa-proto-rs",
  "massa_db_exports",
@@ -1250,7 +1249,6 @@ dependencies = [
 [[package]]
 name = "massa_db_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "displaydoc",
  "massa_hash",
@@ -1263,7 +1261,6 @@ dependencies = [
 [[package]]
 name = "massa_db_worker"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "lsmtree",
  "massa_db_exports",
@@ -1277,7 +1274,6 @@ dependencies = [
 [[package]]
 name = "massa_executed_ops"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "massa_db_exports",
  "massa_hash",
@@ -1290,7 +1286,6 @@ dependencies = [
 [[package]]
 name = "massa_final_state"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "bs58",
  "displaydoc",
@@ -1315,7 +1310,6 @@ dependencies = [
 [[package]]
 name = "massa_hash"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "blake3",
  "bs58",
@@ -1331,7 +1325,6 @@ dependencies = [
 [[package]]
 name = "massa_ledger_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "displaydoc",
  "massa-proto-rs",
@@ -1349,7 +1342,6 @@ dependencies = [
 [[package]]
 name = "massa_ledger_worker"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "massa_db_exports",
  "massa_ledger_exports",
@@ -1361,7 +1353,6 @@ dependencies = [
 [[package]]
 name = "massa_models"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "bitvec",
  "bs58",
@@ -1387,7 +1378,6 @@ dependencies = [
 [[package]]
 name = "massa_pos_exports"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "bitvec",
  "crossbeam-channel",
@@ -1410,7 +1400,6 @@ dependencies = [
 [[package]]
 name = "massa_serialization"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "displaydoc",
  "nom",
@@ -1422,7 +1411,6 @@ dependencies = [
 [[package]]
 name = "massa_signature"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "bs58",
  "displaydoc",
@@ -1439,7 +1427,6 @@ dependencies = [
 [[package]]
 name = "massa_time"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "displaydoc",
  "massa_serialization",
@@ -1452,7 +1439,6 @@ dependencies = [
 [[package]]
 name = "massa_versioning"
 version = "0.24.0"
-source = "git+https://github.com/massalabs/massa?branch=feature/ledger_editor_versioning_1#584bf9b5b925e6a62d079d64544c6017ee2c744c"
 dependencies = [
  "machine",
  "massa-proto-rs",
@@ -2188,9 +2174,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83d3daa6976cffb758ec878f108ba0e062a45b2d6ca3a2cca965338855476caf"
+checksum = "39354c10dd07468c2e73926b23bb9c2caca74c5501e38a35da70406f1d923310"
 dependencies = [
  "aho-corasick",
  "memchr",

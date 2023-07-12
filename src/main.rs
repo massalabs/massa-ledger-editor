@@ -2,15 +2,15 @@ use massa_db_exports::{
     DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX,
 };
 use massa_final_state::FinalState;
-use massa_ledger_editor::{
-    get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, WrappedMassaDB,
-};
+use massa_ledger_editor::{get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, get_mip_list, WrappedMassaDB};
 use massa_ledger_exports::{KeyDeserializer, LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
 use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
-use massa_versioning::{mips::get_mip_list, versioning::MipStore};
+use massa_versioning::{
+    // mips::get_mip_list,
+    versioning::MipStore};
 use parking_lot::RwLock;
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
 use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
@@ -222,14 +222,17 @@ fn main() {
     ));
 
     let ledger = FinalLedger::new(ledger_config, db.clone());
+    let mip_list = get_mip_list();
     let mut mip_store =
-        MipStore::try_from((get_mip_list(), mip_stats_config)).expect("mip store creation failed");
+        MipStore::try_from((mip_list, mip_stats_config)).expect("mip store creation failed");
+
+    // println!("After try_from, mip store: {:?}", mip_store);
 
     // update MIP store by reading from the db
     mip_store
         .extend_from_db(db.clone())
         .expect("Could not read mip store from disk");
-    // println!("mip store len: {}", mip_store.len());
+    // println!("After extend from db, mip store: {:?}", mip_store);
 
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
@@ -319,6 +322,7 @@ fn main() {
         println!("shut start: {}", shutdown_start);
         println!("shut end: {}", shutdown_end);
 
+        // println!("Calling update_for_network_shutdown...");
         guard
             .mip_store
             .update_for_network_shutdown(shutdown_start,
@@ -330,6 +334,7 @@ fn main() {
 
         let mut db_batch = DBBatch::new();
         let mut db_versioning_batch = DBBatch::new();
+        // Rewrite the whole MIP store
         guard
             .mip_store
             .update_batches(&mut db_batch, &mut db_versioning_batch, None)
