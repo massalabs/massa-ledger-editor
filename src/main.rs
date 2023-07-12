@@ -222,8 +222,15 @@ fn main() {
     ));
 
     let ledger = FinalLedger::new(ledger_config, db.clone());
-    let mip_store =
+    let mut mip_store =
         MipStore::try_from((get_mip_list(), mip_stats_config)).expect("mip store creation failed");
+
+    // update MIP store by reading from the db
+    mip_store
+        .extend_from_db(db.clone())
+        .expect("Could not read mip store from disk");
+    // println!("mip store len: {}", mip_store.len());
+
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(

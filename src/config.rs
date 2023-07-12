@@ -85,17 +85,19 @@ pub fn get_final_state_config(path: PathBuf, initial_rolls_path: Option<PathBuf>
 
     let initial_rolls_path = match initial_rolls_path {
         Some(p) => p,
-        None => todo!()
+        None => {
+            path
+               .parent()
+               .unwrap()
+               .parent()
+               .unwrap()
+               .parent()
+               .unwrap()
+               .join("base_config")
+               .join("initial_rolls.json")
+        }
     };
-    // let initial_rolls_path = path
-    //     .parent()
-    //     .unwrap()
-    //     .parent()
-    //     .unwrap()
-    //     .parent()
-    //     .unwrap()
-    //     .join("base_config")
-    //     .join("initial_rolls.json");
+    println!("initial_rolls_path: {:?}", initial_rolls_path);
     FinalStateConfig {
         ledger_config,
         async_pool_config,
