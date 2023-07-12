@@ -1,6 +1,4 @@
-use massa_db_exports::{
-    DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX,
-};
+use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX, STATE_CF, MIP_STORE_PREFIX, MIP_STORE_STATS_PREFIX, VERSIONING_CF};
 use massa_final_state::FinalState;
 use massa_ledger_editor::{get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, get_mip_list, WrappedMassaDB};
 use massa_ledger_exports::{KeyDeserializer, LedgerChanges, LedgerEntry, SetUpdateOrDelete};
@@ -351,6 +349,11 @@ fn main() {
         println!("db_batch len: {}", db_batch.len());
         println!("db_vers_batch len: {}", db_versioning_batch.len());
 
+        // Cleanup db (remove previous versioning entries)
+        guard.db.write().delete_prefix(MIP_STORE_PREFIX, STATE_CF, None);
+        guard.db.write().delete_prefix(MIP_STORE_PREFIX, VERSIONING_CF, None);
+        guard.db.write().delete_prefix(MIP_STORE_STATS_PREFIX, VERSIONING_CF, None);
+        // Write updated entries
         guard.db.write().write_batch(db_batch, db_versioning_batch, None);
 
         println!("Writing done...");
