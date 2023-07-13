@@ -224,15 +224,16 @@ fn main() {
 
     let ledger = FinalLedger::new(ledger_config, db.clone());
     let mip_list = get_mip_list();
-    let mut mip_store =
-        MipStore::try_from((mip_list, mip_stats_config)).expect("mip store creation failed");
+    // let mut mip_store =
+    //     MipStore::try_from((mip_list, mip_stats_config)).expect("mip store creation failed");
 
-    // println!("After try_from, mip store: {:?}", mip_store);
+    let mip_store = MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
+    println!("After try_from_db, mip store: {:?}", mip_store);
 
-    // update MIP store by reading from the db
-    mip_store
-        .extend_from_db(db.clone())
-        .expect("Could not read mip store from disk");
+    // // update MIP store by reading from the db
+    // mip_store
+    //     .extend_from_db(db.clone())
+    //     .expect("Could not read mip store from disk");
     // println!("After extend from db, mip store: {:?}", mip_store);
 
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
@@ -350,9 +351,13 @@ fn main() {
         println!("db_vers_batch len: {}", db_versioning_batch.len());
 
         // Cleanup db (remove previous versioning entries)
-        guard.db.write().delete_prefix(MIP_STORE_PREFIX, STATE_CF, None);
-        guard.db.write().delete_prefix(MIP_STORE_PREFIX, VERSIONING_CF, None);
-        guard.db.write().delete_prefix(MIP_STORE_STATS_PREFIX, VERSIONING_CF, None);
+        // guard.db.write().delete_prefix(MIP_STORE_PREFIX, STATE_CF, None);
+        // guard.db.write().delete_prefix(MIP_STORE_PREFIX, VERSIONING_CF, None);
+        // guard.db.write().delete_prefix(MIP_STORE_STATS_PREFIX, VERSIONING_CF, None);
+
+        // Cleanup db (as we are going to rewrite all versioning entries)
+        guard.mip_store.reset_db(db.clone());
+
         // Write updated entries
         guard.db.write().write_batch(db_batch, db_versioning_batch, None);
 
