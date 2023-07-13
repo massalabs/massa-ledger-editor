@@ -13,8 +13,8 @@ use massa_models::config::{
 };
 use massa_pos_exports::PoSConfig;
 use massa_versioning::versioning::MipStatsConfig;
-use std::path::PathBuf;
 use num::rational::Ratio;
+use std::path::PathBuf;
 
 pub fn get_db_config(path: PathBuf) -> MassaDBConfig {
     MassaDBConfig {
@@ -76,7 +76,10 @@ pub fn get_mip_stats_config() -> MipStatsConfig {
     }
 }
 
-pub fn get_final_state_config(path: PathBuf, initial_rolls_path: Option<PathBuf>) -> FinalStateConfig {
+pub fn get_final_state_config(
+    path: PathBuf,
+    initial_rolls_path: Option<PathBuf>,
+) -> FinalStateConfig {
     let ledger_config = get_ledger_config(path.clone());
     let async_pool_config = get_async_pool_config();
     let pos_config = get_pos_config();
@@ -85,17 +88,15 @@ pub fn get_final_state_config(path: PathBuf, initial_rolls_path: Option<PathBuf>
 
     let initial_rolls_path = match initial_rolls_path {
         Some(p) => p,
-        None => {
-            path
-               .parent()
-               .unwrap()
-               .parent()
-               .unwrap()
-               .parent()
-               .unwrap()
-               .join("base_config")
-               .join("initial_rolls.json")
-        }
+        None => path
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("base_config")
+            .join("initial_rolls.json"),
     };
     println!("initial_rolls_path: {:?}", initial_rolls_path);
     FinalStateConfig {

@@ -1,7 +1,7 @@
 mod config;
-mod wrapped_massa_db;
 mod versioning;
+mod wrapped_massa_db;
 
 pub use config::*;
-pub use wrapped_massa_db::*;
 pub use versioning::*;
+pub use wrapped_massa_db::*;

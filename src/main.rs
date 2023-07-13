@@ -1,19 +1,20 @@
-use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX, STATE_CF, MIP_STORE_PREFIX, MIP_STORE_STATS_PREFIX, VERSIONING_CF};
+use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
 use massa_final_state::FinalState;
-use massa_ledger_editor::{get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config, get_mip_list, WrappedMassaDB};
+use massa_ledger_editor::{
+    get_db_config, get_final_state_config, get_ledger_config, get_mip_list, get_mip_stats_config,
+    WrappedMassaDB,
+};
 use massa_ledger_exports::{KeyDeserializer, LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
+use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
+use massa_models::slot::Slot;
 use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
-use massa_versioning::{
-    // mips::get_mip_list,
-    versioning::MipStore};
+use massa_time::MassaTime;
+use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
-use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
-use massa_models::slot::Slot;
-use massa_time::MassaTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -38,8 +39,10 @@ pub struct Args {
 
 const OLD_IDENT_BYTE_INDEX: usize = 34; // place of the ident byte
 
-fn edit_old_value(old_serialized_key: &[u8], old_serialized_value: &[u8]) -> (Vec<u8>, Vec<u8>, u8) {
-
+fn edit_old_value(
+    old_serialized_key: &[u8],
+    old_serialized_value: &[u8],
+) -> (Vec<u8>, Vec<u8>, u8) {
     let mut new_serialized_key = Vec::new();
     new_serialized_key.extend_from_slice(LEDGER_PREFIX.as_bytes());
     new_serialized_key.extend_from_slice(&old_serialized_key[0..2]);
@@ -56,7 +59,11 @@ fn edit_old_value(old_serialized_key: &[u8], old_serialized_value: &[u8]) -> (Ve
         new_serialized_key.extend_from_slice(&old_serialized_key[OLD_IDENT_BYTE_INDEX + 1..]);
     }
 
-    (new_serialized_key, old_serialized_value.to_vec(), old_ident_value)
+    (
+        new_serialized_key,
+        old_serialized_value.to_vec(),
+        old_ident_value,
+    )
 }
 fn add_version_ident_key(old_serialized_key: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let mut new_serialized_key_for_version_byte = Vec::new();
@@ -66,7 +73,8 @@ fn add_version_ident_key(old_serialized_key: &[u8]) -> (Vec<u8>, Vec<u8>) {
     // Add version byte
     new_serialized_key_for_version_byte.push(0u8);
 
-    new_serialized_key_for_version_byte.extend_from_slice(&old_serialized_key[2..OLD_IDENT_BYTE_INDEX]);
+    new_serialized_key_for_version_byte
+        .extend_from_slice(&old_serialized_key[2..OLD_IDENT_BYTE_INDEX]);
     // Put the Version ident byte
     new_serialized_key_for_version_byte.push(0u8);
 
@@ -148,7 +156,7 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
                 new_serialized_key,
                 &new_serialized_value,
             );
-            
+
             valid_count += 1;
             total_count += 1;
             cur_count += 1;
@@ -159,14 +167,17 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
                     new_serialized_key_for_version_byte,
                     &new_serialized_value_for_version_byte,
                 );
-    
+
                 valid_count += 1;
                 total_count += 1;
                 cur_count += 1;
             }
         } else {
             println!("Invalid key/value pair: {:?}", new_serialized_key);
-            println!("Invalid key/value pair: {:?}", new_serialized_key_for_version_byte);
+            println!(
+                "Invalid key/value pair: {:?}",
+                new_serialized_key_for_version_byte
+            );
         }
     }
 
@@ -213,7 +224,8 @@ fn main() {
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
     let ledger_config = get_ledger_config(args.path.clone());
-    let final_state_config = get_final_state_config(args.path, Some(args.initial_rolls_path.clone()));
+    let final_state_config =
+        get_final_state_config(args.path, Some(args.initial_rolls_path.clone()));
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
@@ -223,7 +235,8 @@ fn main() {
     ));
 
     let ledger = FinalLedger::new(ledger_config, db.clone());
-    let mip_store = MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
+    let mip_store =
+        MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
     println!("mip store: {:?}", mip_store);
 
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
@@ -243,7 +256,8 @@ fn main() {
     if convert_ledger {
         let new_db_config = get_db_config(args.output_path.clone());
         let new_ledger_config = get_ledger_config(args.output_path.clone());
-        let new_final_state_config = get_final_state_config(args.output_path, Some(args.initial_rolls_path));
+        let new_final_state_config =
+            get_final_state_config(args.output_path, Some(args.initial_rolls_path));
         let new_mip_stats_config = get_mip_stats_config();
 
         let new_wrapped_db = WrappedMassaDB::new(new_db_config, false);
@@ -319,11 +333,13 @@ fn main() {
         println!("Updating MIP store...");
         guard
             .mip_store
-            .update_for_network_shutdown(shutdown_start,
-                                         shutdown_end,
-                                         THREAD_COUNT,
-                                         T0,
-                                         genesis_timestamp)
+            .update_for_network_shutdown(
+                shutdown_start,
+                shutdown_end,
+                THREAD_COUNT,
+                T0,
+                genesis_timestamp,
+            )
             .expect("Cannot update MIP store");
 
         let mut db_batch = DBBatch::new();
@@ -340,8 +356,10 @@ fn main() {
 
         // Write updated entries
         println!("Writing MIP store...");
-        guard.db.write().write_batch(db_batch, db_versioning_batch, None);
+        guard
+            .db
+            .write()
+            .write_batch(db_batch, db_versioning_batch, None);
         println!("Done.");
     }
-
 }

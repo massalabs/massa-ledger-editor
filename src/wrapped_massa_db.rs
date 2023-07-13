@@ -1,12 +1,6 @@
-use std::{
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
-use massa_db_exports::{
-    MassaDBConfig, METADATA_CF,
-    OPEN_ERROR, STATE_CF, VERSIONING_CF,
-};
+use massa_db_exports::{MassaDBConfig, METADATA_CF, OPEN_ERROR, STATE_CF, VERSIONING_CF};
 use massa_db_worker::MassaDB;
 use massa_models::slot::{Slot, SlotDeserializer, SlotSerializer};
 use parking_lot::Mutex;
@@ -48,7 +42,6 @@ impl WrappedMassaDB {
             )
             .expect(OPEN_ERROR)
         };
-
 
         let db = Arc::new(db);
         let current_batch = Arc::new(Mutex::new(WriteBatch::default()));
