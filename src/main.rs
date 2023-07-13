@@ -223,18 +223,8 @@ fn main() {
     ));
 
     let ledger = FinalLedger::new(ledger_config, db.clone());
-    let mip_list = get_mip_list();
-    // let mut mip_store =
-    //     MipStore::try_from((mip_list, mip_stats_config)).expect("mip store creation failed");
-
     let mip_store = MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
-    println!("After try_from_db, mip store: {:?}", mip_store);
-
-    // // update MIP store by reading from the db
-    // mip_store
-    //     .extend_from_db(db.clone())
-    //     .expect("Could not read mip store from disk");
-    // println!("After extend from db, mip store: {:?}", mip_store);
+    println!("mip store: {:?}", mip_store);
 
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
@@ -321,15 +311,12 @@ fn main() {
         let shutdown_start: Slot = Slot::new(args.shutdown_start.unwrap(), 0);
         let shutdown_end: Slot = Slot::new(args.shutdown_end.unwrap(), 0);
 
-        println!("shut start: {}", shutdown_start);
-        println!("shut end: {}", shutdown_end);
-
         let genesis_timestamp = match args.genesis_timestamp {
             Some(ts) => MassaTime::from_millis(ts),
             None => *GENESIS_TIMESTAMP,
         };
-        println!("Genesis ts: {}", genesis_timestamp);
 
+        println!("Updating MIP store...");
         guard
             .mip_store
             .update_for_network_shutdown(shutdown_start,
@@ -347,21 +334,14 @@ fn main() {
             .update_batches(&mut db_batch, &mut db_versioning_batch, None)
             .expect("Cannot get batches in order to write MIP store");
 
-        println!("db_batch len: {}", db_batch.len());
-        println!("db_vers_batch len: {}", db_versioning_batch.len());
-
-        // Cleanup db (remove previous versioning entries)
-        // guard.db.write().delete_prefix(MIP_STORE_PREFIX, STATE_CF, None);
-        // guard.db.write().delete_prefix(MIP_STORE_PREFIX, VERSIONING_CF, None);
-        // guard.db.write().delete_prefix(MIP_STORE_STATS_PREFIX, VERSIONING_CF, None);
-
         // Cleanup db (as we are going to rewrite all versioning entries)
+        println!("Reset DB (versioning)...");
         guard.mip_store.reset_db(db.clone());
 
         // Write updated entries
+        println!("Writing MIP store...");
         guard.db.write().write_batch(db_batch, db_versioning_batch, None);
-
-        println!("Writing done...");
+        println!("Done.");
     }
 
 }
