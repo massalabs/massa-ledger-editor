@@ -11,29 +11,31 @@ rocksdb = "0.20"
 num = "0.4"
 
 # massa exports, on a rev synced with this repo
-massa_models = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_models" }
-massa_hash = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_hash" }
-massa_ledger_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_ledger_exports" }
-massa_ledger_worker = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_ledger_worker" }
-massa_db_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_db_exports" }
-massa_final_state = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_final_state" }
-massa_async_pool = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_async_pool" }
-massa_executed_ops = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_executed_ops" }
-massa_pos_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_pos_exports", features = ["testing"] }
-massa_versioning = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_versioning" }
-massa_db_worker = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_db_worker"}
-massa_serialization = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_serialization"}
+# massa_models = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_models" }
+# massa_hash = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_hash" }
+# massa_ledger_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_ledger_exports" }
+# massa_ledger_worker = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_ledger_worker" }
+# massa_db_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_db_exports" }
+# massa_final_state = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_final_state" }
+# massa_async_pool = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_async_pool" }
+# massa_executed_ops = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_executed_ops" }
+# massa_pos_exports = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_pos_exports", features = ["testing"] }
+# massa_versioning = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_versioning" }
+# massa_db_worker = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_db_worker"}
+# massa_serialization = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_serialization"}
+# massa_time = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_time"}
 
 # If you want to update, target the testnet branch instead:
-#massa_models = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_models" }
-#massa_hash = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_hash" }
-#massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_ledger_exports" }
-#massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_ledger_worker" }
-#massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_db_exports" }
-#massa_final_state = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_final_state" }
-#massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_async_pool" }
-#massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_executed_ops" }
-#massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_pos_exports", features = ["testing"] }
-#massa_versioning = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_versioning" }
-#massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_db_worker"}
-#massa_serialization = { git = "https://github.com/massalabs/massa", branch = "testnet_25", package = "massa_serialization"}
+massa_models = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_models" }
+massa_hash = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_hash" }
+massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_ledger_exports" }
+massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_ledger_worker" }
+massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_db_exports" }
+massa_final_state = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_final_state" }
+massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_async_pool" }
+massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_executed_ops" }
+massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_pos_exports", features = ["testing"] }
+massa_versioning = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_versioning" }
+massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_db_worker"}
+massa_serialization = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_serialization"}
+massa_time = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_time"}

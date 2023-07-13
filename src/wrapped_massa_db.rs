@@ -1,12 +1,6 @@
-use std::{
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
-use massa_db_exports::{
-    MassaDBConfig, METADATA_CF,
-    OPEN_ERROR, STATE_CF, VERSIONING_CF,
-};
+use massa_db_exports::{MassaDBConfig, METADATA_CF, OPEN_ERROR, STATE_CF, VERSIONING_CF};
 use massa_db_worker::MassaDB;
 use massa_models::slot::{Slot, SlotDeserializer, SlotSerializer};
 use parking_lot::Mutex;
@@ -17,10 +11,14 @@ pub struct WrappedMassaDB(pub MassaDB);
 
 impl WrappedMassaDB {
     /// Returns a new `MassaDB` instance
-    pub fn new(config: MassaDBConfig, convert_ledger_from_old_format: bool) -> Self {
+    pub fn new(config: MassaDBConfig, convert_ledger_from_old_format: bool, create_if_missing: bool) -> Self {
         let mut db_opts = Options::default();
-        db_opts.create_if_missing(true);
-        db_opts.create_missing_column_families(true);
+
+        // Note: no need to create anything (it can even be misleading if we specify the wrong path)
+        if create_if_missing {
+            db_opts.create_if_missing(true);
+            db_opts.create_missing_column_families(true);
+        }
 
         let db = if convert_ledger_from_old_format {
             DB::open_cf_descriptors(
@@ -46,7 +44,6 @@ impl WrappedMassaDB {
             )
             .expect(OPEN_ERROR)
         };
-
 
         let db = Arc::new(db);
         let current_batch = Arc::new(Mutex::new(WriteBatch::default()));
