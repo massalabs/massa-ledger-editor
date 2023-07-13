@@ -11,12 +11,14 @@ pub struct WrappedMassaDB(pub MassaDB);
 
 impl WrappedMassaDB {
     /// Returns a new `MassaDB` instance
-    pub fn new(config: MassaDBConfig, convert_ledger_from_old_format: bool) -> Self {
-        let db_opts = Options::default();
+    pub fn new(config: MassaDBConfig, convert_ledger_from_old_format: bool, create_if_missing: bool) -> Self {
+        let mut db_opts = Options::default();
 
         // Note: no need to create anything (it can even be misleading if we specify the wrong path)
-        // db_opts.create_if_missing(true);
-        // db_opts.create_missing_column_families(true);
+        if create_if_missing {
+            db_opts.create_if_missing(true);
+            db_opts.create_missing_column_families(true);
+        }
 
         let db = if convert_ledger_from_old_format {
             DB::open_cf_descriptors(

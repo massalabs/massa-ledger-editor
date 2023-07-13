@@ -35,6 +35,8 @@ pub struct Args {
     shutdown_end: Option<u64>,
     #[structopt(long)]
     genesis_timestamp: Option<u64>,
+    #[structopt(long)]
+    create_if_missing: bool,
 }
 
 const OLD_IDENT_BYTE_INDEX: usize = 34; // place of the ident byte
@@ -220,6 +222,10 @@ fn main() {
     let edit_ledger = false;
     let scan_ledger = false;
     let update_mip_store = args.update_mip_store;
+    let create_if_missing = args.create_if_missing;
+    if update_mip_store && create_if_missing {
+        panic!("--update-mip-store excludes --create-if-missing");
+    }
 
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
@@ -229,7 +235,7 @@ fn main() {
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
-    let wrapped_db = WrappedMassaDB::new(db_config, convert_ledger);
+    let wrapped_db = WrappedMassaDB::new(db_config, convert_ledger, create_if_missing);
     let db = Arc::new(RwLock::new(
         Box::new(wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
     ));
@@ -260,7 +266,7 @@ fn main() {
             get_final_state_config(args.output_path, Some(args.initial_rolls_path));
         let new_mip_stats_config = get_mip_stats_config();
 
-        let new_wrapped_db = WrappedMassaDB::new(new_db_config, false);
+        let new_wrapped_db = WrappedMassaDB::new(new_db_config, false, create_if_missing);
         let new_db = Arc::new(RwLock::new(
             Box::new(new_wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
         ));
