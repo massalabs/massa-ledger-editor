@@ -81,7 +81,7 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
-        let batch_size: u64 = 10;
+        let batch_size: u64 = 1;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
             println!("{added}/{target} done {:.5}% (ETA {:.2}mins)", ((added as f64) / (target as f64)) * 100.0, tleft.as_secs_f64()/60.0);
