@@ -64,10 +64,6 @@ fn main() {
     let mip_store =
         MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
 
-    let mut slot = Slot {
-        period: 0,
-        thread: 0,
-    };
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(
@@ -80,6 +76,7 @@ fn main() {
         )
         .expect("could not init final state"),
     ));
+    let mut slot = final_state.read().db.read().get_change_id().unwrap();
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
