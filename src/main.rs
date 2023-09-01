@@ -20,6 +20,8 @@ pub struct Args {
     path: PathBuf,
     #[structopt(short, long)]
     initial_rolls_path: PathBuf,
+    #[structopt(short, long)]
+    target_ledger_size: u64,
 }
 
 fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
@@ -77,7 +79,7 @@ fn main() {
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
-        let target: u64 = 700 * 1024 * 1024 * 1024;
+        let target: u64 = args.target_ledger_size * 1024 * 1024 * 1024;
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
