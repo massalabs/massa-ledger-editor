@@ -94,7 +94,7 @@ fn main() {
                 let mut datastore = BTreeMap::default();
                 let new_keypair = KeyPair::generate(0).unwrap();
                 let new_pubkey = new_keypair.get_public_key();
-                let key_size = 255 - n.to_be_bytes().len() - added.to_be_bytes().len();
+                let key_size = 255 - (n+1).to_be_bytes().len() - added.to_be_bytes().len();
                 let mut datastore_key = Vec::from(added.to_be_bytes());
                 datastore_key.extend((n+1).to_be_bytes());
                 datastore_key.extend(vec![0; key_size]);
