@@ -28,6 +28,7 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     let mut telapsed = start.elapsed();
     let mut done_u32 = done;
     while all_u32 <= (u32::MAX as u64) {
+        println!("{all_u32} > {}", (u32::MAX as u64));
         all_u32 /= 2;
         telapsed /= 2;
         done_u32 /=2;
