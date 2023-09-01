@@ -9,7 +9,7 @@ use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
-use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::{Instant, Duration}};
 use structopt::StructOpt;
 use massa_signature::KeyPair;
 
@@ -20,6 +20,24 @@ pub struct Args {
     path: PathBuf,
     #[structopt(short, long)]
     initial_rolls_path: PathBuf,
+}
+
+fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
+    let mut all_u32 = all;
+    let mut telapsed = start.elapsed();
+    let mut done_u32 = done;
+    while all_u32 < (u32::MAX as u64) {
+        all_u32 /= 2;
+        telapsed /= 2;
+        done_u32 /=2;
+    }
+    let all_u32 = all_u32 as u32;
+    let done_u32 = done_u32 as u32;
+    if done_u32 == 0 {
+        Duration::MAX
+    } else {
+        (all_u32 * telapsed) / done_u32
+    }
 }
 
 fn main() {
@@ -63,8 +81,10 @@ fn main() {
         let target: u64 = 700 * 1024 * 1024 * 1024;
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
+        let start = Instant::now();
         while added < target {
-            println!("{added}/{target} done {:.5}%", ((added as f64) / (target as f64)) * 100.0);
+            let tleft = calc_time_left(&start, added, target);
+            println!("{added}/{target} done {:.5}% (estimated {tleft:?} time left)", ((added as f64) / (target as f64)) * 100.0);
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
 
