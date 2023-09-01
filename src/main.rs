@@ -65,8 +65,8 @@ fn main() {
         MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
 
     let mut slot = Slot {
-        period: 1,
-        thread: 1,
+        period: 0,
+        thread: 0,
     };
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
@@ -124,6 +124,7 @@ fn main() {
             // Write the batch to the DB
             db.write().write_batch(state_batch, versioning_batch, Some(slot));
             slot = slot.get_next_slot(32).unwrap();
+            println!("slot: {slot}");
             db.write().flush().unwrap();
             added += 9_999_999 + 254 + 9_999_999;
         }
