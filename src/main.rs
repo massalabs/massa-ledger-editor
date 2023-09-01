@@ -119,6 +119,7 @@ fn main() {
 
             // Write the batch to the DB
             db.write().write_batch(state_batch, versioning_batch, None);
+            db.write().flush().unwrap();
             added += 9_999_999 + 254 + 9_999_999;
         }
     }
