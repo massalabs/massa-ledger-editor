@@ -64,7 +64,7 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         while added < target {
-            println!("{added}/{target} done");
+            println!("{added}/{target} done {:.5}%", ((added as f64) / (target as f64)) * 100.0);
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
 
