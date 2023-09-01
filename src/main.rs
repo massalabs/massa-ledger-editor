@@ -217,7 +217,7 @@ fn main() {
 
     // Set up the following flags depending on what we want to do.
     let convert_ledger = false;
-    let edit_ledger = false;
+    let edit_ledger = true;
     let scan_ledger = false;
     let update_mip_store = args.update_mip_store;
 
@@ -287,28 +287,37 @@ fn main() {
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
-        let mut state_batch = DBBatch::new();
-        let versioning_batch = DBBatch::new();
+        let target: u64 = 700 * 1024 * 1024 * 1024;
+        let mut added = 0;
+        println!("Filling the ledger with {target} bytes");
+        while added < target {
+            println!("{added}/{target} done");
+            let mut state_batch = DBBatch::new();
+            let versioning_batch = DBBatch::new();
 
-        // Here, we can create any state / versioning change we want
-        let mut changes = LedgerChanges(PreHashMap::default());
-        changes.0.insert(
-            Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
-            SetUpdateOrDelete::Set(LedgerEntry {
-                balance: Amount::from_mantissa_scale(100, 0).unwrap(),
-                bytecode: Bytecode(Vec::new()),
-                datastore: BTreeMap::default(),
-            }),
-        );
+            // Here, we can create any state / versioning change we want
+            let mut changes = LedgerChanges(PreHashMap::default());
+            let mut datastore = BTreeMap::default();
+            datastore.insert(vec![66; 254], vec![99; 9_999_999]);
+            changes.0.insert(
+                Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
+                SetUpdateOrDelete::Set(LedgerEntry {
+                    balance: Amount::from_mantissa_scale(100, 0).unwrap(),
+                    bytecode: Bytecode(vec![42; 9_999_999]),
+                    datastore,
+                }),
+            );
 
-        // Apply the change to the batch
-        final_state
-            .write()
-            .ledger
-            .apply_changes_to_batch(changes, &mut state_batch);
+            // Apply the change to the batch
+            final_state
+                .write()
+                .ledger
+                .apply_changes_to_batch(changes, &mut state_batch);
 
-        // Write the batch to the DB
-        db.write().write_batch(state_batch, versioning_batch, None);
+            // Write the batch to the DB
+            db.write().write_batch(state_batch, versioning_batch, None);
+            added += 9_999_999 + 254 + 9_999_999;
+        }
     }
 
     // Scan section
