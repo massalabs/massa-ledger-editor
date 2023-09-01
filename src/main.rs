@@ -84,7 +84,7 @@ fn main() {
         let batch_size: u64 = 1;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            println!("{added}/{target} done {:.5}% (ETA {:.2}mins)", ((added as f64) / (target as f64)) * 100.0, tleft.as_secs_f64()/60.0);
+            println!("{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins)", (added as f64) / (1024.0 * 1024.0), (target as f64) / (1024.0 * 1024.0), ((added as f64) / (target as f64)) * 100.0, tleft.as_secs_f64()/60.0);
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
             // Here, we can create any state / versioning change we want
