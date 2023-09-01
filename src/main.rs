@@ -22,9 +22,6 @@ pub struct Args {
     // path is used to open an existing db
     #[structopt(short, long)]
     path: PathBuf,
-    // output_path is used to create a new db (only when using convert_from_testnet22_ledger_to_testnet23_ledger)
-    #[structopt(short, long)]
-    output_path: PathBuf,
     #[structopt(short, long)]
     initial_rolls_path: PathBuf,
     #[structopt(short, long)]
@@ -251,39 +248,6 @@ fn main() {
         )
         .expect("could not init final state"),
     ));
-
-    // Edit section - Conversion from testnet22 to testnet23 ledger
-    if convert_ledger {
-        let new_db_config = get_db_config(args.output_path.clone());
-        let new_ledger_config = get_ledger_config(args.output_path.clone());
-        let new_final_state_config =
-            get_final_state_config(args.output_path, Some(args.initial_rolls_path));
-        let new_mip_stats_config = get_mip_stats_config();
-
-        let new_wrapped_db = WrappedMassaDB::new(new_db_config, false, true);
-        let new_db = Arc::new(RwLock::new(
-            Box::new(new_wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
-        ));
-
-        let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
-        let new_mip_store = MipStore::try_from((get_mip_list(), new_mip_stats_config))
-            .expect("mip store creation failed");
-        let (new_selector_controller, _new_selector_receiver) =
-            MockSelectorController::new_with_receiver();
-        let new_final_state = Arc::new(parking_lot::RwLock::new(
-            FinalState::new(
-                new_db.clone(),
-                new_final_state_config,
-                Box::new(new_ledger),
-                new_selector_controller.clone(),
-                new_mip_store,
-                false,
-            )
-            .expect("could not init final state"),
-        ));
-
-        convert_from_testnet22_ledger_to_testnet23_ledger(final_state.clone(), new_final_state);
-    }
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
