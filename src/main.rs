@@ -23,6 +23,7 @@ pub struct Args {
 }
 
 fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
+    println!("{:?} {} / {}", start.elapsed(), done, all);
     let mut all_u32 = all;
     let mut telapsed = start.elapsed();
     let mut done_u32 = done;
@@ -36,6 +37,7 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     if done_u32 == 0 {
         Duration::MAX
     } else {
+        println!("({} * {:?}) / {}", all_u32, telapsed, done_u32);
         (all_u32 * telapsed) / done_u32
     }
 }
