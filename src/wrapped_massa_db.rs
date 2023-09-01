@@ -11,7 +11,11 @@ pub struct WrappedMassaDB(pub MassaDB);
 
 impl WrappedMassaDB {
     /// Returns a new `MassaDB` instance
-    pub fn new(config: MassaDBConfig, convert_ledger_from_old_format: bool, create_if_missing: bool) -> Self {
+    pub fn new(
+        config: MassaDBConfig,
+        convert_ledger_from_old_format: bool,
+        create_if_missing: bool,
+    ) -> Self {
         let mut db_opts = Options::default();
 
         // Note: no need to create anything (it can even be misleading if we specify the wrong path)
