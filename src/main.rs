@@ -24,11 +24,10 @@ pub struct Args {
 
 fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     let mut all_u32 = all;
-    let mut telapsed = start.elapsed();
+    let telapsed = start.elapsed();
     let mut done_u32 = done;
     while all_u32 >= (u32::MAX as u64) {
         all_u32 /= 2;
-        // telapsed /= 2;
         done_u32 /=2;
     }
     let all_u32 = all_u32 as u32;
@@ -36,7 +35,7 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     if done_u32 == 0 {
         Duration::MAX
     } else {
-        (all_u32 * telapsed) / done_u32
+        ((all_u32 * telapsed) / done_u32).saturating_sub(telapsed)
     }
 }
 
@@ -82,28 +81,33 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
+        let batch_size: u64 = 10;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            println!("{added}/{target} done {:.5}% (ETA {:?}/{tleft:?})", ((added as f64) / (target as f64)) * 100.0, start.elapsed());
+            println!("{added}/{target} done {:.5}% (ETA {tleft:?})", ((added as f64) / (target as f64)) * 100.0);
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
-
             // Here, we can create any state / versioning change we want
             let mut changes = LedgerChanges(PreHashMap::default());
-            let mut datastore = BTreeMap::default();
-            let new_keypair = KeyPair::generate(0).unwrap();
-            let new_pubkey = new_keypair.get_public_key();
-            let mut datastore_key = Vec::from(added.to_be_bytes());
-            datastore_key.extend(vec![0; 250]);
-            datastore.insert(datastore_key, vec![99; 9_999_999]);
-            changes.0.insert(
-                Address::from_public_key(&new_pubkey),
-                SetUpdateOrDelete::Set(LedgerEntry {
-                    balance: Amount::from_mantissa_scale(100, 0).unwrap(),
-                    bytecode: Bytecode(vec![42; 9_999_999]),
-                    datastore,
-                }),
-            );
+
+            for n in 0..batch_size {
+                let mut datastore = BTreeMap::default();
+                let new_keypair = KeyPair::generate(0).unwrap();
+                let new_pubkey = new_keypair.get_public_key();
+                let key_size = 255 - n.to_be_bytes().len() - added.to_be_bytes().len();
+                let mut datastore_key = Vec::from(added.to_be_bytes());
+                datastore_key.extend((n+1).to_be_bytes());
+                datastore_key.extend(vec![0; key_size]);
+                datastore.insert(datastore_key, vec![99; 9_999_999]);
+                changes.0.insert(
+                    Address::from_public_key(&new_pubkey),
+                    SetUpdateOrDelete::Set(LedgerEntry {
+                        balance: Amount::from_mantissa_scale(100, 0).unwrap(),
+                        bytecode: Bytecode(vec![42; 9_999_999]),
+                        datastore,
+                    }),
+                );
+            }
 
             // Apply the change to the batch
             final_state
