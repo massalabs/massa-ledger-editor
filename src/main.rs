@@ -73,7 +73,9 @@ fn main() {
             let mut datastore = BTreeMap::default();
             let new_keypair = KeyPair::generate(0).unwrap();
             let new_pubkey = new_keypair.get_public_key();
-            datastore.insert(vec![66; 254], vec![99; 9_999_999]);
+            let mut datastore_key = Vec::from(added.to_be_bytes());
+            datastore_key.extend(vec![0; 250]);
+            datastore.insert(datastore_key, vec![99; 9_999_999]);
             changes.0.insert(
                 Address::from_public_key(&new_pubkey),
                 SetUpdateOrDelete::Set(LedgerEntry {
