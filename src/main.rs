@@ -24,12 +24,11 @@ pub struct Args {
 
 fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     let mut all_u32 = all;
-    let telapsed = start.elapsed();
-    let mut telapsed_div = telapsed;
+    let mut telapsed = start.elapsed();
     let mut done_u32 = done;
     while all_u32 >= (u32::MAX as u64) {
         all_u32 /= 2;
-        telapsed_div /= 2;
+        telapsed /= 2;
         done_u32 /=2;
     }
     let all_u32 = all_u32 as u32;
@@ -37,7 +36,7 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     if done_u32 == 0 {
         Duration::MAX
     } else {
-        ((all_u32 * telapsed_div) / done_u32) - telapsed
+        (all_u32 * telapsed) / done_u32
     }
 }
 
@@ -85,7 +84,7 @@ fn main() {
         let start = Instant::now();
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            println!("{added}/{target} done {:.5}% (estimated {tleft:?} time left)", ((added as f64) / (target as f64)) * 100.0);
+            println!("{added}/{target} done {:.5}% (ETA {:?}/{tleft:?})", ((added as f64) / (target as f64)) * 100.0, start.elapsed());
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
 
