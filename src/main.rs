@@ -9,8 +9,9 @@ use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
-use std::{collections::BTreeMap, path::PathBuf, str::FromStr, sync::Arc};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use structopt::StructOpt;
+use massa_signature::KeyPair;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
@@ -70,9 +71,11 @@ fn main() {
             // Here, we can create any state / versioning change we want
             let mut changes = LedgerChanges(PreHashMap::default());
             let mut datastore = BTreeMap::default();
+            let new_keypair = KeyPair::generate(0).unwrap();
+            let new_pubkey = new_keypair.get_public_key();
             datastore.insert(vec![66; 254], vec![99; 9_999_999]);
             changes.0.insert(
-                Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
+                Address::from_public_key(&new_pubkey),
                 SetUpdateOrDelete::Set(LedgerEntry {
                     balance: Amount::from_mantissa_scale(100, 0).unwrap(),
                     bytecode: Bytecode(vec![42; 9_999_999]),
