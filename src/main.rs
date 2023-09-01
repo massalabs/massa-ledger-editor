@@ -5,7 +5,7 @@ use massa_ledger_editor::{
 };
 use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
-use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
+use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap, slot::Slot};
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
@@ -64,6 +64,10 @@ fn main() {
     let mip_store =
         MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
 
+    let mut slot = Slot {
+        period: 1,
+        thread: 1,
+    };
     let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
     let final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(
@@ -118,7 +122,8 @@ fn main() {
                 .apply_changes_to_batch(changes, &mut state_batch);
 
             // Write the batch to the DB
-            db.write().write_batch(state_batch, versioning_batch, None);
+            db.write().write_batch(state_batch, versioning_batch, Some(slot));
+            slot = slot.get_next_slot(32).unwrap();
             db.write().flush().unwrap();
             added += 9_999_999 + 254 + 9_999_999;
         }
