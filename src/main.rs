@@ -24,7 +24,7 @@ pub struct Args {
     path: PathBuf,
     // output_path is used to create a new db (only when using convert_from_testnet22_ledger_to_testnet23_ledger)
     #[structopt(short, long)]
-    output_path: PathBuf,
+    output_path: Option<PathBuf>,
     #[structopt(short, long)]
     initial_rolls_path: PathBuf,
     #[structopt(short, long)]
@@ -217,7 +217,7 @@ fn main() {
 
     // Set up the following flags depending on what we want to do.
     let convert_ledger = false;
-    let edit_ledger = false;
+    let edit_ledger = true;
     let scan_ledger = false;
     let update_mip_store = args.update_mip_store;
 
@@ -254,10 +254,10 @@ fn main() {
 
     // Edit section - Conversion from testnet22 to testnet23 ledger
     if convert_ledger {
-        let new_db_config = get_db_config(args.output_path.clone());
-        let new_ledger_config = get_ledger_config(args.output_path.clone());
+        let new_db_config = get_db_config(args.output_path.clone().unwrap());
+        let new_ledger_config = get_ledger_config(args.output_path.clone().unwrap());
         let new_final_state_config =
-            get_final_state_config(args.output_path, Some(args.initial_rolls_path));
+            get_final_state_config(args.output_path.unwrap(), Some(args.initial_rolls_path));
         let new_mip_stats_config = get_mip_stats_config();
 
         let new_wrapped_db = WrappedMassaDB::new(new_db_config, false, true);
@@ -287,10 +287,13 @@ fn main() {
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
-        let mut state_batch = DBBatch::new();
-        let versioning_batch = DBBatch::new();
+        println!("Editing ledger...");
 
-        // Here, we can create any state / versioning change we want
+        final_state.write().init_execution_trail_hash();
+
+        let db_valid = final_state.write().is_db_valid();
+        println!("DB valid: {}", db_valid);
+        /*// Here, we can create any state / versioning change we want
         let mut changes = LedgerChanges(PreHashMap::default());
         changes.0.insert(
             Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
@@ -299,25 +302,26 @@ fn main() {
                 bytecode: Bytecode(Vec::new()),
                 datastore: BTreeMap::default(),
             }),
-        );
+        );*/
 
         // Apply the change to the batch
-        final_state
+        /*final_state
             .write()
             .ledger
-            .apply_changes_to_batch(changes, &mut state_batch);
+            .apply_changes_to_batch(changes, &mut state_batch);*/
 
         // Write the batch to the DB
-        db.write().write_batch(state_batch, versioning_batch, None);
+        //db.write().write_batch(state_batch, versioning_batch, None);
     }
 
     // Scan section
     if scan_ledger {
         // Here, we can query read functions from the state, but we could instead directly query the DB
-        let balance = final_state.read().ledger.get_balance(
-            &Address::from_str("AU12AXf3ngq3e5zPWikXu3QGR18JtX3wbRuduA3126joowvPwVWdk").unwrap(),
-        );
-        println!("{:#?}", balance);
+        let get_execution_trail_hash = final_state.read().get_execution_trail_hash();
+        println!("{:#?}", get_execution_trail_hash);
+
+        let hash = final_state.read().get_fingerprint();
+        println!("{:#?}", hash);
     }
 
     if update_mip_store {

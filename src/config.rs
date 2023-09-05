@@ -46,6 +46,7 @@ fn get_async_pool_config() -> AsyncPoolConfig {
 
 fn get_pos_config() -> PoSConfig {
     PoSConfig {
+        initial_deferred_credits_path: Some(PathBuf::new()),
         periods_per_cycle: PERIODS_PER_CYCLE,
         thread_count: THREAD_COUNT,
         cycle_history_length: POS_SAVED_CYCLES,
@@ -57,12 +58,14 @@ fn get_pos_config() -> PoSConfig {
 
 fn get_executed_ops_config() -> ExecutedOpsConfig {
     ExecutedOpsConfig {
+        keep_executed_history_extra_periods: 1,
         thread_count: THREAD_COUNT,
     }
 }
 
 fn get_executed_denunciations_config() -> ExecutedDenunciationsConfig {
     ExecutedDenunciationsConfig {
+        keep_executed_history_extra_periods: 1,
         denunciation_expire_periods: DENUNCIATION_EXPIRE_PERIODS,
         thread_count: THREAD_COUNT,
         endorsement_count: ENDORSEMENT_COUNT,
