@@ -132,8 +132,8 @@ fn main() {
         let mut nwrite = 0;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            print!(
-                "\r{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
+            println!(
+                "{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
                 (added as f64) / (1024.0 * 1024.0),
                 (target as f64) / (1024.0 * 1024.0),
                 ((added as f64) / (target as f64)) * 100.0,
