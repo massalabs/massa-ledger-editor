@@ -69,13 +69,13 @@ fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 
     let bytecode = Bytecode(generate_random_vector(9_999_999, rng));
     sz += 9_999_999;
 
-    let new_keypair = KeyPair::generate(0).unwrap();
+    let new_keypair = KeyPair::generate(0).expect("Unable to generate keypair");
     let new_pubkey = new_keypair.get_public_key();
     datastore.insert(datastore_key, datastore_val);
     changes.0.insert(
         Address::from_public_key(&new_pubkey),
         SetUpdateOrDelete::Set(LedgerEntry {
-            balance: Amount::from_mantissa_scale(100, 0).unwrap(),
+            balance: Amount::from_mantissa_scale(100, 0).expect("Unable to get amount from mantissa scale"),
             bytecode,
             datastore,
         }),
@@ -119,7 +119,7 @@ fn main() {
         )
         .expect("could not init final state"),
     ));
-    let mut slot = final_state.read().db.read().get_change_id().unwrap();
+    let mut slot = final_state.read().db.read().get_change_id().expect("Unable to get change id");
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
@@ -128,15 +128,17 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
-        let batch_size: u64 = 1;
+        let batch_size: u64 = 10;
+        let mut nwrite = 0;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            println!(
-                "{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins)",
+            print!(
+                "\r{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
                 (added as f64) / (1024.0 * 1024.0),
                 (target as f64) / (1024.0 * 1024.0),
                 ((added as f64) / (target as f64)) * 100.0,
-                tleft.as_secs_f64() / 60.0
+                tleft.as_secs_f64() / 60.0,
+                " ".repeat(10),
             );
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
@@ -154,10 +156,16 @@ fn main() {
                 .apply_changes_to_batch(changes, &mut state_batch);
 
             // Write the batch to the DB
-            db.write()
-                .write_batch(state_batch, versioning_batch, Some(slot));
-            slot = slot.get_next_slot(32).unwrap();
-            db.write().flush().unwrap();
+            {
+                let mut db = db.write();
+                db.write_batch(state_batch, versioning_batch, Some(slot));
+                nwrite += 1;
+                if (nwrite % 100) == 0 {
+                    db.flush().expect("Error while flushing DB");
+                }
+            }
+            slot = slot.get_next_slot(32).expect("Unable to get next slot");
+            std::thread::sleep(std::time::Duration::from_millis(200));
         }
     }
 }
