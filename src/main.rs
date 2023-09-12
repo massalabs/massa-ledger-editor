@@ -128,7 +128,7 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
-        let batch_size: u64 = 10;
+        let batch_size: u64 = 4;
         let mut nwrite = 0;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
@@ -150,17 +150,19 @@ fn main() {
             }
 
             // Apply the change to the batch
-            final_state
-                .write()
-                .ledger
-                .apply_changes_to_batch(changes, &mut state_batch);
+            {
+                let mut final_state = final_state.write();
+                final_state
+                    .ledger
+                    .apply_changes_to_batch(changes, &mut state_batch);
+            }
 
             // Write the batch to the DB
             {
                 let mut db = db.write();
                 db.write_batch(state_batch, versioning_batch, Some(slot));
                 nwrite += 1;
-                if (nwrite % 50) == 0 {
+                if (nwrite % 20) == 0 {
                     db.flush().expect("Error while flushing DB");
                 }
             }
