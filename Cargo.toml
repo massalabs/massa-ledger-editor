@@ -40,3 +40,4 @@ massa_versioning = { git = "https://github.com/massalabs/massa", branch = "featu
 massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_db_worker"}
 massa_serialization = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_serialization"}
 massa_time = { git = "https://github.com/massalabs/massa", branch = "feature/ledger_editor_versioning_1", package = "massa_time"}
+rand = "0.8.5"

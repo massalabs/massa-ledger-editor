@@ -1212,6 +1212,7 @@ dependencies = [
  "num",
  "parking_lot",
  "paw",
+ "rand 0.8.5",
  "rocksdb",
  "structopt",
 ]

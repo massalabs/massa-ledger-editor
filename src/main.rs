@@ -5,13 +5,22 @@ use massa_ledger_editor::{
 };
 use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
-use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap, slot::Slot};
+use massa_models::{
+    address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap, slot::Slot,
+};
 use massa_pos_exports::test_exports::MockSelectorController;
+use massa_signature::KeyPair;
 use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
-use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::{Instant, Duration}};
+use rand::rngs::ThreadRng;
+use rand::Rng;
+use std::{
+    collections::BTreeMap,
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use structopt::StructOpt;
-use massa_signature::KeyPair;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
@@ -30,7 +39,7 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     let mut done_u32 = done;
     while all_u32 >= (u32::MAX as u64) {
         all_u32 /= 2;
-        done_u32 /=2;
+        done_u32 /= 2;
     }
     let all_u32 = all_u32 as u32;
     let done_u32 = done_u32 as u32;
@@ -39,6 +48,36 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     } else {
         ((all_u32 * telapsed) / done_u32).saturating_sub(telapsed)
     }
+}
+
+fn generate_random_vector(size: usize, rng: &mut ThreadRng) -> Vec<u8> {
+    (0..size).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>()
+}
+
+fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 {
+    let mut sz = 0;
+    let mut datastore = BTreeMap::default();
+
+    let datastore_key = generate_random_vector(255, rng);
+    sz += 255;
+    let datastore_val = generate_random_vector(9_999_999, rng);
+    sz += 9_999_999;
+    let bytecode = Bytecode(generate_random_vector(9_999_999, rng));
+    sz += 9_999_999;
+
+    let new_keypair = KeyPair::generate(0).unwrap();
+    let new_pubkey = new_keypair.get_public_key();
+    datastore.insert(datastore_key, datastore_val);
+    changes.0.insert(
+        Address::from_public_key(&new_pubkey),
+        SetUpdateOrDelete::Set(LedgerEntry {
+            balance: Amount::from_mantissa_scale(100, 0).unwrap(),
+            bytecode,
+            datastore,
+        }),
+    );
+
+    sz
 }
 
 fn main() {
@@ -80,6 +119,7 @@ fn main() {
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
+        let mut rng = rand::thread_rng();
         let target: u64 = args.target_ledger_size * 1024 * 1024 * 1024;
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
@@ -87,29 +127,20 @@ fn main() {
         let batch_size: u64 = 1;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
-            println!("{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins)", (added as f64) / (1024.0 * 1024.0), (target as f64) / (1024.0 * 1024.0), ((added as f64) / (target as f64)) * 100.0, tleft.as_secs_f64()/60.0);
+            println!(
+                "{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins)",
+                (added as f64) / (1024.0 * 1024.0),
+                (target as f64) / (1024.0 * 1024.0),
+                ((added as f64) / (target as f64)) * 100.0,
+                tleft.as_secs_f64() / 60.0
+            );
             let mut state_batch = DBBatch::new();
             let versioning_batch = DBBatch::new();
             // Here, we can create any state / versioning change we want
             let mut changes = LedgerChanges(PreHashMap::default());
 
-            for n in 0..batch_size {
-                let mut datastore = BTreeMap::default();
-                let new_keypair = KeyPair::generate(0).unwrap();
-                let new_pubkey = new_keypair.get_public_key();
-                let key_size = 255 - (n+1).to_be_bytes().len() - added.to_be_bytes().len();
-                let mut datastore_key = Vec::from(added.to_be_bytes());
-                datastore_key.extend((n+1).to_be_bytes());
-                datastore_key.extend(vec![0; key_size]);
-                datastore.insert(datastore_key, vec![99; 9_999_999]);
-                changes.0.insert(
-                    Address::from_public_key(&new_pubkey),
-                    SetUpdateOrDelete::Set(LedgerEntry {
-                        balance: Amount::from_mantissa_scale(100, 0).unwrap(),
-                        bytecode: Bytecode(vec![42; 9_999_999]),
-                        datastore,
-                    }),
-                );
+            for _ in 0..batch_size {
+                added += create_ledger_entry(&mut changes, &mut rng);
             }
 
             // Apply the change to the batch
@@ -119,11 +150,10 @@ fn main() {
                 .apply_changes_to_batch(changes, &mut state_batch);
 
             // Write the batch to the DB
-            db.write().write_batch(state_batch, versioning_batch, Some(slot));
+            db.write()
+                .write_batch(state_batch, versioning_batch, Some(slot));
             slot = slot.get_next_slot(32).unwrap();
-            println!("slot: {slot}");
             db.write().flush().unwrap();
-            added += 9_999_999 + 254 + 9_999_999;
         }
     }
 }
