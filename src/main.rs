@@ -24,11 +24,15 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
-    // path is used to open an existing db
+    // Path to the ledger directory
     #[structopt(short, long)]
     path: PathBuf,
+
+    /// Path to the initial rolls file
     #[structopt(short, long)]
     initial_rolls_path: PathBuf,
+
+    /// Ledger size to reach, in GiB
     #[structopt(short, long)]
     target_ledger_size: u64,
 }
