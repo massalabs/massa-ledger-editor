@@ -133,7 +133,7 @@ fn main() {
         while added < target {
             let tleft = calc_time_left(&start, added, target);
             println!(
-                "{:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
+                "[{nwrite}] {:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
                 (added as f64) / (1024.0 * 1024.0),
                 (target as f64) / (1024.0 * 1024.0),
                 ((added as f64) / (target as f64)) * 100.0,
@@ -160,7 +160,7 @@ fn main() {
                 let mut db = db.write();
                 db.write_batch(state_batch, versioning_batch, Some(slot));
                 nwrite += 1;
-                if (nwrite % 100) == 0 {
+                if (nwrite % 50) == 0 {
                     db.flush().expect("Error while flushing DB");
                 }
             }
