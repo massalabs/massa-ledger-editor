@@ -128,7 +128,7 @@ fn main() {
         let mut added = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
-        let batch_size: u64 = 4;
+        let batch_size: u64 = 1;
         let mut nwrite = 0;
         while added < target {
             let tleft = calc_time_left(&start, added, target);
@@ -167,7 +167,7 @@ fn main() {
                 }
             }
             slot = slot.get_next_slot(32).expect("Unable to get next slot");
-            std::thread::sleep(std::time::Duration::from_millis(200));
         }
+        db.write().flush().expect("Error while flushing DB");
     }
 }
