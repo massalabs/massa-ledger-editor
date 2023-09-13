@@ -17,6 +17,7 @@ impl WrappedMassaDB {
         create_if_missing: bool,
     ) -> Self {
         let mut db_opts = Options::default();
+        db_opts.set_max_open_files(820);
 
         // Note: no need to create anything (it can even be misleading if we specify the wrong path)
         if create_if_missing {
