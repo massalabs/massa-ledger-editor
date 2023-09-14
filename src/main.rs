@@ -62,12 +62,12 @@ fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 
     let mut sz = 0;
     let mut datastore = BTreeMap::default();
 
-    let datastore_key = generate_random_vector(255, rng);
-    sz += 255;
-    let datastore_val = generate_random_vector(9_999_999 - 10, rng);
-    sz += (9_999_999 - 10);
-    let bytecode = Bytecode(generate_random_vector(9_999_999, rng));
+    let datastore_key = generate_random_vector(255 - 50, rng);
+    sz += 255 - 50;
+    let datastore_val = generate_random_vector(9_999_999, rng);
     sz += 9_999_999;
+    let bytecode = Bytecode(generate_random_vector(9_999_999 - 10, rng));
+    sz += 9_999_999 - 10;
 
     let new_keypair = KeyPair::generate(0).expect("Unable to generate keypair");
     let new_pubkey = new_keypair.get_public_key();
