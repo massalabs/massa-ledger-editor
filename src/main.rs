@@ -64,8 +64,8 @@ fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 
 
     let datastore_key = generate_random_vector(255, rng);
     sz += 255;
-    let datastore_val = generate_random_vector(9_999_999, rng);
-    sz += 9_999_999;
+    let datastore_val = generate_random_vector(9_999_999 - 10, rng);
+    sz += (9_999_999 - 10);
     let bytecode = Bytecode(generate_random_vector(9_999_999, rng));
     sz += 9_999_999;
 
