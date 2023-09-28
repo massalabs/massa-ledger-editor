@@ -5,9 +5,7 @@ use massa_ledger_editor::{
 };
 use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_ledger_worker::FinalLedger;
-use massa_models::{
-    address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap, slot::Slot,
-};
+use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_signature::KeyPair;
 use massa_versioning::versioning::MipStore;
@@ -35,9 +33,18 @@ pub struct Args {
     /// Ledger size to reach, in GiB
     #[structopt(short, long)]
     target_ledger_size: u64,
+
+    #[structopt(short, long, default_value = "205")]
+    datastore_key_size: usize,
+
+    #[structopt(short, long, default_value = "9999989")]
+    datastore_value_size: usize,
+
+    #[structopt(short, long, default_value = "9999989")]
+    bytecode_size: usize,
 }
 
-fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
+fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
     let mut all_u32 = all;
     let telapsed = start.elapsed();
     let mut done_u32 = done;
@@ -54,20 +61,21 @@ fn calc_time_left(start: &Instant, done: u64, all: u64) -> Duration {
     }
 }
 
+#[inline]
 fn generate_random_vector(size: usize, rng: &mut ThreadRng) -> Vec<u8> {
     (0..size).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>()
 }
 
-fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 {
+fn create_ledger_entry(args: &Args, changes: &mut LedgerChanges, rng: &mut ThreadRng) -> usize {
     let mut sz = 0;
     let mut datastore = BTreeMap::default();
 
-    let datastore_key = generate_random_vector(255 - 50, rng);
-    sz += 255 - 50;
-    let datastore_val = generate_random_vector(9_999_999, rng);
-    sz += 9_999_999;
-    let bytecode = Bytecode(generate_random_vector(9_999_999 - 10, rng));
-    sz += 9_999_999 - 10;
+    let datastore_key = generate_random_vector(args.datastore_key_size, rng);
+    sz += args.datastore_key_size;
+    let datastore_val = generate_random_vector(args.datastore_value_size, rng);
+    sz += args.datastore_value_size;
+    let bytecode = Bytecode(generate_random_vector(args.bytecode_size, rng));
+    sz += args.bytecode_size;
 
     let new_keypair = KeyPair::generate(0).expect("Unable to generate keypair");
     let new_pubkey = new_keypair.get_public_key();
@@ -75,7 +83,8 @@ fn create_ledger_entry(changes: &mut LedgerChanges, rng: &mut ThreadRng) -> u64 
     changes.0.insert(
         Address::from_public_key(&new_pubkey),
         SetUpdateOrDelete::Set(LedgerEntry {
-            balance: Amount::from_mantissa_scale(100, 0).expect("Unable to get amount from mantissa scale"),
+            balance: Amount::from_mantissa_scale(100, 0)
+                .expect("Unable to get amount from mantissa scale"),
             bytecode,
             datastore,
         }),
@@ -94,7 +103,8 @@ fn main() {
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
     let ledger_config = get_ledger_config(args.path.clone());
-    let final_state_config = get_final_state_config(args.path, Some(args.initial_rolls_path));
+    let final_state_config =
+        get_final_state_config(args.path.clone(), Some(args.initial_rolls_path.clone()));
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
@@ -119,18 +129,23 @@ fn main() {
         )
         .expect("could not init final state"),
     ));
-    let mut slot = final_state.read().db.read().get_change_id().expect("Unable to get change id");
+    let mut slot = final_state
+        .read()
+        .db
+        .read()
+        .get_change_id()
+        .expect("Unable to get change id");
 
     // Edit section - Manual edits on the ledger or on the final_state
     if edit_ledger {
         let mut rng = rand::thread_rng();
         let target: u64 = args.target_ledger_size * 1024 * 1024 * 1024;
-        let mut added = 0;
+        let mut added: usize = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
         let batch_size: u64 = 1;
         let mut nwrite = 0;
-        while added < target {
+        while added < target.try_into().unwrap() {
             let tleft = calc_time_left(&start, added, target);
             println!(
                 "[{nwrite}] {:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
@@ -146,7 +161,7 @@ fn main() {
             let mut changes = LedgerChanges(PreHashMap::default());
 
             for _ in 0..batch_size {
-                added += create_ledger_entry(&mut changes, &mut rng);
+                added += create_ledger_entry(&args, &mut changes, &mut rng);
             }
 
             // Apply the change to the batch
