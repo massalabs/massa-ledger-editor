@@ -33,7 +33,7 @@ pub struct Args {
 
     /// Ledger size to reach, in GiB
     #[structopt(short, long)]
-    target_ledger_size: u64,
+    target_ledger_size: Option<u64>,
 
     #[structopt(short, long, default_value = "205")]
     datastore_key_size: usize,
@@ -142,8 +142,8 @@ fn main() {
         let mut changes = LedgerChanges(PreHashMap::default());
         let mut datastore = BTreeMap::default();
         let datastore_key = "TIM PROBLEMATIC KEY".as_bytes().to_vec();
-        let datastore_val = generate_random_vector(9_999_900, &mut rng);
-        let bytecode = Bytecode(generate_random_vector(9_999_900, &mut rng));
+        let datastore_val = generate_random_vector(args.datastore_value_size, &mut rng);
+        let bytecode = Bytecode(generate_random_vector(args.bytecode_size, &mut rng));
         datastore.insert(datastore_key, datastore_val);
         changes.0.insert(
             Address::from_str("AU12hnuosRCREmeu6nQGvsG2EhHiEW9tzzwkpDabWwZHug1uFn2YS").unwrap(),
@@ -168,7 +168,7 @@ fn main() {
             db.flush().expect("Error while flushing DB");
         }
     } else {
-        let target: u64 = args.target_ledger_size * 1024 * 1024 * 1024;
+        let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
         let mut added: usize = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
