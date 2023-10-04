@@ -15,6 +15,7 @@ use rand::Rng;
 use std::{
     collections::BTreeMap,
     path::PathBuf,
+    str::FromStr,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -42,6 +43,9 @@ pub struct Args {
 
     #[structopt(short, long, default_value = "9999989")]
     bytecode_size: usize,
+
+    #[structopt(short, long)]
+    single_problematic_value: bool,
 }
 
 fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
@@ -96,10 +100,6 @@ fn create_ledger_entry(args: &Args, changes: &mut LedgerChanges, rng: &mut Threa
 fn main() {
     let args = Args::from_args();
 
-    // Set up the following flags depending on what we want to do.
-    let convert_ledger = false;
-    let edit_ledger = true;
-
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
     let ledger_config = get_ledger_config(args.path.clone());
@@ -108,7 +108,7 @@ fn main() {
     let mip_stats_config = get_mip_stats_config();
 
     // Instantiate the main structs
-    let wrapped_db = WrappedMassaDB::new(db_config, convert_ledger, false);
+    let wrapped_db = WrappedMassaDB::new(db_config, false, false);
     let db = Arc::new(RwLock::new(
         Box::new(wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
     ));
@@ -136,9 +136,38 @@ fn main() {
         .get_change_id()
         .expect("Unable to get change id");
 
+    let mut rng = ThreadRng::default();
     // Edit section - Manual edits on the ledger or on the final_state
-    if edit_ledger {
-        let mut rng = rand::thread_rng();
+    if args.single_problematic_value {
+        let mut changes = LedgerChanges(PreHashMap::default());
+        let mut datastore = BTreeMap::default();
+        let datastore_key = "TIM PROBLEMATIC KEY".as_bytes().to_vec();
+        let datastore_val = generate_random_vector(9_999_900, &mut rng);
+        let bytecode = Bytecode(generate_random_vector(9_999_900, &mut rng));
+        datastore.insert(datastore_key, datastore_val);
+        changes.0.insert(
+            Address::from_str("AU12hnuosRCREmeu6nQGvsG2EhHiEW9tzzwkpDabWwZHug1uFn2YS").unwrap(),
+            SetUpdateOrDelete::Set(LedgerEntry {
+                balance: Amount::from_mantissa_scale(100, 0)
+                    .expect("Unable to get amount from mantissa scale"),
+                bytecode,
+                datastore,
+            }),
+        );
+        let mut state_batch = DBBatch::new();
+        {
+            let mut final_state = final_state.write();
+            final_state
+                .ledger
+                .apply_changes_to_batch(changes, &mut state_batch);
+        }
+        let versioning_batch = DBBatch::new();
+        {
+            let mut db = db.write();
+            db.write_batch(state_batch, versioning_batch, Some(slot));
+            db.flush().expect("Error while flushing DB");
+        }
+    } else {
         let target: u64 = args.target_ledger_size * 1024 * 1024 * 1024;
         let mut added: usize = 0;
         println!("Filling the ledger with {target} bytes");
