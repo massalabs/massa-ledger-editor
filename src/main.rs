@@ -38,7 +38,7 @@ pub struct Args {
     #[structopt(short, long, default_value = "205")]
     datastore_key_size: usize,
 
-    #[structopt(short, long, default_value = "9999989")]
+    #[structopt(long, default_value = "9999989")]
     datastore_value_size: usize,
 
     #[structopt(short, long, default_value = "9999989")]
@@ -168,7 +168,8 @@ fn main() {
             db.flush().expect("Error while flushing DB");
         }
     } else {
-        let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
+        // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
+        let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024;
         let mut added: usize = 0;
         println!("Filling the ledger with {target} bytes");
         let start = Instant::now();
