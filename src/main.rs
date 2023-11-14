@@ -1,4 +1,4 @@
-use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
+use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX, STATE_CF};
 use massa_final_state::FinalState;
 use massa_ledger_editor::{
     get_db_config, get_final_state_config, get_ledger_config, get_mip_list, get_mip_stats_config,
@@ -9,8 +9,8 @@ use massa_ledger_worker::FinalLedger;
 use massa_models::config::{GENESIS_TIMESTAMP, T0, THREAD_COUNT};
 use massa_models::slot::Slot;
 use massa_models::{address::Address, amount::Amount, bytecode::Bytecode, prehash::PreHashMap};
-use massa_pos_exports::test_exports::MockSelectorController;
-use massa_serialization::{DeserializeError, Deserializer};
+use massa_pos_exports::MockSelectorController;
+use massa_serialization::{DeserializeError, Deserializer, Serializer};
 use massa_time::MassaTime;
 use massa_versioning::versioning::MipStore;
 use parking_lot::RwLock;
@@ -212,14 +212,52 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
     new_final_state.write().db.write().flush().unwrap();
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn compare_two_ledgers(
+    old_final_state: Arc<RwLock<FinalState>>,
+    new_final_state: Arc<RwLock<FinalState>>,
+) {
+    let old_db = old_final_state.read().db.clone();
+    let new_db = new_final_state.read().db.clone();
+
+    for (old_serialized_key, old_serialized_value) in old_db
+        .read()
+        .iterator_cf(STATE_CF, MassaIteratorMode::Start)
+    {
+        if let Some(new_value) = new_db.read().get_cf(STATE_CF, old_serialized_key.clone()).unwrap() {
+            
+            if new_value != old_serialized_value {
+                println!("The following key differs in value: {:?}", old_serialized_key);
+                println!("OLD value: {:?}", old_serialized_value);
+                println!("NEW value: {:?}", new_value);
+            }
+
+        } else {
+            println!("OLD Key not found in NEW ledger: {:?}", old_serialized_key);
+        }
+    }
+
+    for (new_serialized_key, new_serialized_value) in new_db
+        .read()
+        .iterator_cf(STATE_CF, MassaIteratorMode::Start)
+    {
+        if old_db.read().get_cf(STATE_CF, new_serialized_key.clone()).unwrap().is_none() {
+            println!("NEW Key not found in OLD ledger: {:?}", new_serialized_key);
+        }
+    }
+}
+
+
 fn main() {
     let args = Args::from_args();
 
     // Set up the following flags depending on what we want to do.
     let convert_ledger = false;
-    let edit_ledger = true;
+    let edit_ledger = false;
     let scan_ledger = false;
     let update_mip_store = args.update_mip_store;
+    let compare_ledgers = true;
 
     // Retrieve config structures
     let db_config = get_db_config(args.path.clone());
@@ -239,18 +277,49 @@ fn main() {
         MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
     println!("mip store: {:?}", mip_store);
 
-    let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
+    let selector_controller = MockSelectorController::new();
     let final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(
             db.clone(),
             final_state_config,
             Box::new(ledger),
-            selector_controller.clone(),
+            Box::new(selector_controller),
             mip_store,
             false,
         )
         .expect("could not init final state"),
     ));
+
+    if compare_ledgers {
+        let new_db_config = get_db_config(args.output_path.clone().unwrap());
+        let new_ledger_config = get_ledger_config(args.output_path.clone().unwrap());
+        let new_final_state_config =
+            get_final_state_config(args.output_path.clone().unwrap(), Some(args.initial_rolls_path.clone()));
+        let new_mip_stats_config = get_mip_stats_config();
+
+        let new_wrapped_db = WrappedMassaDB::new(new_db_config, false, true);
+        let new_db = Arc::new(RwLock::new(
+            Box::new(new_wrapped_db.0) as Box<(dyn MassaDBController + 'static)>
+        ));
+
+        let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
+        let new_mip_store = MipStore::try_from((get_mip_list(), new_mip_stats_config))
+            .expect("mip store creation failed");
+        let new_selector_controller = MockSelectorController::new();
+        let new_final_state = Arc::new(parking_lot::RwLock::new(
+            FinalState::new(
+                new_db.clone(),
+                new_final_state_config,
+                Box::new(new_ledger),
+                Box::new(new_selector_controller),
+                new_mip_store,
+                false,
+            )
+            .expect("could not init final state"),
+        ));
+
+        compare_two_ledgers(final_state.clone(), new_final_state);
+    }
 
     // Edit section - Conversion from testnet22 to testnet23 ledger
     if convert_ledger {
@@ -268,14 +337,13 @@ fn main() {
         let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
         let new_mip_store = MipStore::try_from((get_mip_list(), new_mip_stats_config))
             .expect("mip store creation failed");
-        let (new_selector_controller, _new_selector_receiver) =
-            MockSelectorController::new_with_receiver();
+        let new_selector_controller = MockSelectorController::new();
         let new_final_state = Arc::new(parking_lot::RwLock::new(
             FinalState::new(
                 new_db.clone(),
                 new_final_state_config,
                 Box::new(new_ledger),
-                new_selector_controller.clone(),
+                Box::new(new_selector_controller),
                 new_mip_store,
                 false,
             )
@@ -289,29 +357,34 @@ fn main() {
     if edit_ledger {
         println!("Editing ledger...");
 
-        final_state.write().init_execution_trail_hash();
+        let mut state_batch = DBBatch::new();
 
+        final_state.write().init_execution_trail_hash_to_batch(&mut state_batch);
+
+        pub const EXECUTED_OPS_PREFIX: &str = "executed_ops/";
+
+        for (old_serialized_key, old_serialized_value) in
+            db.read().prefix_iterator_cf(STATE_CF, EXECUTED_OPS_PREFIX.as_bytes())
+        {
+            if !old_serialized_key.starts_with(EXECUTED_OPS_PREFIX.as_bytes()) {
+                break;
+            }
+
+            let mut new_serialized_key = EXECUTED_OPS_PREFIX.as_bytes().to_vec();
+            new_serialized_key.extend_from_slice(&[0_u8]);
+            new_serialized_key.extend_from_slice(&old_serialized_key[EXECUTED_OPS_PREFIX.len()..]);
+
+            println!("Old key: {:?}", old_serialized_key);
+            println!("New key: {:?}", new_serialized_key);
+            state_batch.insert(old_serialized_key, None);
+            state_batch.insert(new_serialized_key, Some(old_serialized_value));
+        }
+
+        db.write().write_batch(state_batch, DBBatch::new(), None);
+        
         let db_valid = final_state.write().is_db_valid();
         println!("DB valid: {}", db_valid);
-        /*// Here, we can create any state / versioning change we want
-        let mut changes = LedgerChanges(PreHashMap::default());
-        changes.0.insert(
-            Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
-            SetUpdateOrDelete::Set(LedgerEntry {
-                balance: Amount::from_mantissa_scale(100, 0).unwrap(),
-                bytecode: Bytecode(Vec::new()),
-                datastore: BTreeMap::default(),
-            }),
-        );*/
-
-        // Apply the change to the batch
-        /*final_state
-            .write()
-            .ledger
-            .apply_changes_to_batch(changes, &mut state_batch);*/
-
-        // Write the batch to the DB
-        //db.write().write_batch(state_batch, versioning_batch, None);
+        
     }
 
     // Scan section

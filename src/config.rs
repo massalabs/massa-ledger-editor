@@ -5,7 +5,8 @@ use massa_final_state::FinalStateConfig;
 use massa_ledger_exports::LedgerConfig;
 use massa_models::config::{
     DENUNCIATION_EXPIRE_PERIODS, ENDORSEMENT_COUNT, GENESIS_TIMESTAMP, INITIAL_DRAW_SEED,
-    MAX_ASYNC_MESSAGE_DATA, MAX_ASYNC_POOL_LENGTH, MAX_BOOTSTRAPPED_NEW_ELEMENTS,
+    MAX_ASYNC_POOL_LENGTH, MAX_BOOTSTRAP_VERSIONING_ELEMENTS_SIZE,
+    MAX_BOOTSTRAP_FINAL_STATE_PARTS_SIZE, MAX_FUNCTION_NAME_LENGTH, MAX_PARAMETERS_SIZE,
     MAX_DATASTORE_KEY_LENGTH, MAX_DATASTORE_VALUE_LENGTH, MAX_DEFERRED_CREDITS_LENGTH,
     MAX_DENUNCIATIONS_PER_BLOCK_HEADER, MAX_DENUNCIATION_CHANGES_LENGTH,
     MAX_PRODUCTION_STATS_LENGTH, MAX_ROLLS_COUNT_LENGTH, MIP_STORE_STATS_BLOCK_CONSIDERED,
@@ -20,7 +21,8 @@ pub fn get_db_config(path: PathBuf) -> MassaDBConfig {
     MassaDBConfig {
         path,
         max_history_length: 100,
-        max_new_elements: MAX_BOOTSTRAPPED_NEW_ELEMENTS as usize,
+        max_versioning_elements_size: MAX_BOOTSTRAP_VERSIONING_ELEMENTS_SIZE as usize,
+        max_final_state_elements_size: MAX_BOOTSTRAP_FINAL_STATE_PARTS_SIZE as usize,
         thread_count: THREAD_COUNT,
     }
 }
@@ -39,7 +41,8 @@ fn get_async_pool_config() -> AsyncPoolConfig {
     AsyncPoolConfig {
         max_length: MAX_ASYNC_POOL_LENGTH,
         thread_count: THREAD_COUNT,
-        max_async_message_data: MAX_ASYNC_MESSAGE_DATA,
+        max_function_length: MAX_FUNCTION_NAME_LENGTH,
+        max_function_params_length: MAX_PARAMETERS_SIZE as u64,
         max_key_length: MAX_DATASTORE_KEY_LENGTH as u32,
     }
 }

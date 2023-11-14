@@ -7,7 +7,7 @@ edition = "2021"
 structopt = { version = "0.3", default-features = false }
 paw = "1.0"
 parking_lot = { version = "0.12", features = ["deadlock_detection"] }
-rocksdb = "0.20"
+rocksdb = "0.21"
 num = "0.4"
 
 # massa exports, on a rev synced with this repo
@@ -26,16 +26,16 @@ num = "0.4"
 # massa_time = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_time"}
 
 # If you want to update, target the testnet branch instead:
-massa_models = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_models" }
-massa_hash = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_hash" }
-massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_ledger_exports" }
-massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_ledger_worker" }
-massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_db_exports" }
-massa_final_state = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_final_state" }
-massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_async_pool" }
-massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_executed_ops" }
-massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_pos_exports", features = ["testing"] }
-massa_versioning = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_versioning" }
-massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_db_worker"}
-massa_serialization = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_serialization"}
-massa_time = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_time"}
+massa_models = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_models" }
+massa_hash = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_hash" }
+massa_ledger_exports = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_ledger_exports" }
+massa_ledger_worker = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_ledger_worker" }
+massa_db_exports = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_db_exports" }
+massa_final_state = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_final_state" }
+massa_async_pool = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_async_pool" }
+massa_executed_ops = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_executed_ops" }
+massa_pos_exports = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_pos_exports", features = ["test-exports"] }
+massa_versioning = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_versioning" }
+massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_db_worker"}
+massa_serialization = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_serialization"}
+massa_time = { git = "https://github.com/massalabs/massa", branch = "main", package = "massa_time"}
