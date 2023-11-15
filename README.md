@@ -10,12 +10,12 @@ If `massa-ledger-editor` was cloned at the same level as `massa` repository, you
 
 - Case 1: You want to manually edit/read the ledger
 
-```bash
-cargo run -- -p ../massa/massa-node/storage/ledger/rocks_db/
+```commandline
+cargo run -- -p ../massa/massa-node/storage/ledger/rocks_db -r ../massa/massa-node/base_config/initial_rolls.json scan-ledger
 ```
 
 - Case 2: You want to convert the ledger from testnet22 to testnet23
 
-```bash
-cargo run -- --path ../massa/massa-node/storage/testnet22_ledger/rocks_db/ --output-path ../massa/massa-node/storage/ledger/rocks_db/
+```commandline
+cargo run -- --path ../massa/massa-node/storage/testnet22_ledger/rocks_db/ -r ../massa/massa-node/base_config/initial_rolls.json convert-ledger --output-path ../massa/massa-node/storage/ledger/rocks_db/
 ```
