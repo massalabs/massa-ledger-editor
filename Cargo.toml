@@ -10,6 +10,7 @@ clap = { version = "4.4", features = ["derive", "cargo"] }
 parking_lot = { version = "0.12", features = ["deadlock_detection"] }
 rocksdb = "0.20"
 num = "0.4"
+rand = "0.8"
 
 # massa exports, on a rev synced with this repo
 # massa_models = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_models" }
@@ -40,3 +41,4 @@ massa_versioning = { git = "https://github.com/massalabs/massa", branch = "testn
 massa_db_worker = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_db_worker"}
 massa_serialization = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_serialization"}
 massa_time = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_time"}
+massa_signature = { git = "https://github.com/massalabs/massa", branch = "testnet_26", package = "massa_signature"}

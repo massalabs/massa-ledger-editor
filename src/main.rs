@@ -1,85 +1,35 @@
+mod args;
+mod config;
+mod ledger_utils;
+mod versioning;
+mod wrapped_massa_db;
+
 use std::{path::PathBuf, sync::Arc};
+use std::time::{Duration, Instant};
 
 use parking_lot::RwLock;
+use clap::Parser;
+use rand::rngs::ThreadRng;
 
 use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
 use massa_final_state::FinalState;
-use massa_ledger_editor::{
-    get_db_config, get_final_state_config, get_ledger_config, get_mip_list, get_mip_stats_config,
-    WrappedMassaDB,
-};
 use massa_ledger_exports::{KeyDeserializer};
 use massa_ledger_worker::FinalLedger;
 use massa_models::config::{T0, THREAD_COUNT};
 use massa_models::slot::Slot;
 use massa_models::{address::Address};
+use massa_models::{prehash::PreHashMap};
 use massa_pos_exports::test_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
 use massa_time::MassaTime;
 use massa_versioning::versioning::MipStore;
+use massa_ledger_exports::LedgerChanges;
 
-use clap::{Args, Parser, Subcommand};
-
-#[derive(Debug, Clone, Parser)]
-#[command(name = "massa-ledger-editor")]
-#[command(about = "Ledger editor", long_about = None)]
-pub struct Cli {
-    #[arg(
-    short = 'p',
-    long = "path",
-    help = "Path of an existing db"
-    )]
-    path: PathBuf,
-    #[arg(
-    short = 'r',
-    long = "initial_rolls_path",
-    help = "Path of initial_rolls.json file (Massa node config file)"
-    )]
-    initial_rolls_path: PathBuf,
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Debug, Clone, PartialEq, Subcommand)]
-enum Commands {
-    #[command(about = "Convert ledger (from testnet 22 to testnet 23)")]
-    ConvertLedger(ConvertLedgerArgs),
-    #[command(about = "Edit ledger (Dummy impl for now)")]
-    EditLedger,
-    #[command(about = "Scan ledger (print trail hash + final state fingerprint")]
-    ScanLedger,
-    #[command(about = "Update MIP store (after a network shutdown) ensuring MIP info are coherent")]
-    UpdateMipStore(UpdateMipStoreArgs),
-}
-
-#[derive(Debug, Clone, PartialEq, Args)]
-pub struct ConvertLedgerArgs {
-    #[arg(
-    short = 'o',
-    long = "output_path",
-    help = "Path where to write converted db"
-    )]
-    output_path: PathBuf,
-}
-
-#[derive(Debug, Clone, PartialEq, Args)]
-pub struct UpdateMipStoreArgs {
-    #[arg(
-    long = "shutdown_start",
-    help = ""
-    )]
-    shutdown_start: u64,
-    #[arg(
-    long = "shutdown_end",
-    help = ""
-    )]
-    shutdown_end: u64,
-    #[arg(
-    long = "genesis_timestamp",
-    help = ""
-    )]
-    genesis_timestamp: u64,
-}
+use crate::args::{Cli, Commands, ConvertLedgerArgs, FillLedgerArgs, UpdateMipStoreArgs};
+use crate::config::{get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config};
+use crate::ledger_utils::create_ledger_entry;
+use crate::versioning::get_mip_list;
+use crate::wrapped_massa_db::WrappedMassaDB;
 
 const OLD_IDENT_BYTE_INDEX: usize = 34; // place of the ident byte
 
@@ -99,6 +49,9 @@ fn main() {
         }
         Commands::ScanLedger => {
             scan_ledger(final_state);
+        }
+        Commands::FillLedger(args_) => {
+            fill_ledger(final_state, args_);
         }
         Commands::UpdateMipStore(args_) => {
             update_mip_store(final_state, args_);
@@ -386,6 +339,84 @@ fn scan_ledger(final_state: Arc<RwLock<FinalState>>) {
 
     let hash = final_state.read().get_fingerprint();
     println!("{:#?}", hash);
+}
+
+fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
+
+    let mut slot = final_state
+        .read()
+        .db
+        .read()
+        .get_change_id()
+        .expect("Unable to get change id");
+    let mut rng = ThreadRng::default();
+    let db = final_state.read().db.clone();
+
+    // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
+    // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024;
+    let target: u64 = 10 * 1024 * 1024;
+    let mut added: usize = 0;
+    println!("Filling the ledger with {target} bytes");
+    let start = Instant::now();
+    let batch_size: u64 = 1;
+    let mut nwrite = 0;
+    while added < target.try_into().unwrap() {
+        let tleft = calc_time_left(&start, added, target);
+        println!(
+            "[{nwrite}] {:.2}MiB / {:.2}MiB done {:.5}% (ETA {:.2} mins){}",
+            (added as f64) / (1024.0 * 1024.0),
+            (target as f64) / (1024.0 * 1024.0),
+            ((added as f64) / (target as f64)) * 100.0,
+            tleft.as_secs_f64() / 60.0,
+            " ".repeat(10),
+        );
+        let mut state_batch = DBBatch::new();
+        let versioning_batch = DBBatch::new();
+        // Here, we can create any state / versioning change we want
+        let mut changes = LedgerChanges(PreHashMap::default());
+
+        for _ in 0..batch_size {
+            added += create_ledger_entry(&args, &mut changes, &mut rng);
+        }
+
+        // Apply the change to the batch
+        {
+            let mut final_state = final_state.write();
+            final_state
+                .ledger
+                .apply_changes_to_batch(changes, &mut state_batch);
+        }
+
+        // Write the batch to the DB
+        {
+            let mut db = db.write();
+            db.write_batch(state_batch, versioning_batch, Some(slot));
+            nwrite += 1;
+            if (nwrite % 20) == 0 {
+                db.flush().expect("Error while flushing DB");
+            }
+        }
+        slot = slot.get_next_slot(32).expect("Unable to get next slot");
+    }
+    db.write().flush().expect("Error while flushing DB");
+}
+
+
+fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
+    let mut all_u32 = all;
+    let telapsed = start.elapsed();
+    let mut done_u32 = done;
+    while all_u32 >= (u32::MAX as u64) {
+        all_u32 /= 2;
+        done_u32 /= 2;
+    }
+    let all_u32 = all_u32 as u32;
+    let done_u32 = done_u32 as u32;
+    if done_u32 == 0 {
+        Duration::MAX
+    } else {
+        ((all_u32 * telapsed) / done_u32).saturating_sub(telapsed)
+    }
 }
 
 fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreArgs) {
