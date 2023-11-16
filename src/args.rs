@@ -53,7 +53,7 @@ pub struct FillLedgerArgs {
         long = "target_ledger_size",
         help = "Ledger size expected (ex: 10Mb, 1.5Gb)"
     )]
-    target_ledger_size: String,
+    pub(crate) target_ledger_size: String,
     #[arg(
         default_value = "205",
         help = ""

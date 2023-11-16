@@ -19,3 +19,9 @@ cargo run -- -p ../massa/massa-node/storage/ledger/rocks_db -r ../massa/massa-no
 ```commandline
 cargo run -- --path ../massa/massa-node/storage/testnet22_ledger/rocks_db/ -r ../massa/massa-node/base_config/initial_rolls.json convert-ledger --output-path ../massa/massa-node/storage/ledger/rocks_db/
 ```
+
+- Case 3: Fill the ledger
+
+```commandline
+cargo run -- -p ~/dev/massa3/massa-node/storage/ledger/rocks_db/ -r ~/dev/massa3/massa-node/base_config/initial_rolls.json fill-ledger -s 0.65G
+```

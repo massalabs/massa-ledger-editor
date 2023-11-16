@@ -6,6 +6,7 @@ mod wrapped_massa_db;
 
 use std::{path::PathBuf, sync::Arc};
 use std::time::{Duration, Instant};
+use bytesize::ByteSize;
 
 use parking_lot::RwLock;
 use clap::Parser;
@@ -354,9 +355,10 @@ fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
 
     // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
     // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024;
-    let target: u64 = 10 * 1024 * 1024;
+    let target_ = args.target_ledger_size.parse::<ByteSize>().expect("Cannot parse ledger size");
+    let target: u64 = target_.as_u64();
     let mut added: usize = 0;
-    println!("Filling the ledger with {target} bytes");
+    println!("Filling the ledger with {target} bytes (original: {target_})");
     let start = Instant::now();
     let batch_size: u64 = 1;
     let mut nwrite = 0;

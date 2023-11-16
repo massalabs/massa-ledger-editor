@@ -11,6 +11,7 @@ parking_lot = { version = "0.12", features = ["deadlock_detection"] }
 rocksdb = "0.20"
 num = "0.4"
 rand = "0.8"
+bytesize = "1.3"
 
 # massa exports, on a rev synced with this repo
 # massa_models = { git = "https://github.com/massalabs/massa", rev = "813b108", package = "massa_models" }
