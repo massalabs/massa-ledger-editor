@@ -1,2 +1,5 @@
 target
+
+# IDE
 .vscode/settings.json
+.idea
