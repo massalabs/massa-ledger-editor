@@ -13,14 +13,14 @@ use clap::Parser;
 use rand::rngs::ThreadRng;
 
 use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
-use massa_final_state::FinalState;
-use massa_ledger_exports::{KeyDeserializer};
+use massa_final_state::{FinalStateController, FinalState};
+use massa_ledger_exports::KeyDeserializer;
 use massa_ledger_worker::FinalLedger;
 use massa_models::config::{T0, THREAD_COUNT};
 use massa_models::slot::Slot;
-use massa_models::{address::Address};
-use massa_models::{prehash::PreHashMap};
-use massa_pos_exports::test_exports::MockSelectorController;
+use massa_models::address::Address;
+use massa_models::prehash::PreHashMap;
+use massa_pos_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
 use massa_time::MassaTime;
 use massa_versioning::versioning::MipStore;
@@ -80,13 +80,13 @@ fn get_final_state(cli: Cli) -> Arc<RwLock<FinalState>> {
         MipStore::try_from_db(db.clone(), mip_stats_config).expect("MIP store try_from_db failed");
     println!("mip store: {:?}", mip_store);
 
-    let (selector_controller, _selector_receiver) = MockSelectorController::new_with_receiver();
+    let selector_controller = Box::new(MockSelectorController::new());
     let final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(
             db.clone(),
             final_state_config,
             Box::new(ledger),
-            selector_controller.clone(),
+            selector_controller,
             mip_store,
             false,
         )
@@ -113,14 +113,13 @@ fn convert_ledger(final_state: Arc<RwLock<FinalState>>, initial_rolls_path: Path
     let new_ledger = FinalLedger::new(new_ledger_config, db.clone());
     let new_mip_store = MipStore::try_from((get_mip_list(), new_mip_stats_config))
         .expect("mip store creation failed");
-    let (new_selector_controller, _new_selector_receiver) =
-        MockSelectorController::new_with_receiver();
+    let new_selector_controller = Box::new(MockSelectorController::new());
     let new_final_state = Arc::new(parking_lot::RwLock::new(
         FinalState::new(
             new_db.clone(),
             new_final_state_config,
             Box::new(new_ledger),
-            new_selector_controller.clone(),
+            new_selector_controller,
             new_mip_store,
             false,
         )
