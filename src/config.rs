@@ -4,7 +4,13 @@ use massa_executed_ops::{ExecutedDenunciationsConfig, ExecutedOpsConfig};
 use massa_final_state::FinalStateConfig;
 use massa_ledger_exports::LedgerConfig;
 use massa_models::config::{
-    DENUNCIATION_EXPIRE_PERIODS, ENDORSEMENT_COUNT, GENESIS_TIMESTAMP, INITIAL_DRAW_SEED, MAX_ASYNC_POOL_LENGTH, MAX_BOOTSTRAP_FINAL_STATE_PARTS_SIZE, MAX_BOOTSTRAP_VERSIONING_ELEMENTS_SIZE, MAX_DATASTORE_KEY_LENGTH, MAX_DATASTORE_VALUE_LENGTH, MAX_DEFERRED_CREDITS_LENGTH, MAX_DENUNCIATIONS_PER_BLOCK_HEADER, MAX_DENUNCIATION_CHANGES_LENGTH, MAX_FUNCTION_NAME_LENGTH, MAX_PARAMETERS_SIZE, MAX_PRODUCTION_STATS_LENGTH, MAX_ROLLS_COUNT_LENGTH, MIP_STORE_STATS_BLOCK_CONSIDERED, PERIODS_PER_CYCLE, POS_SAVED_CYCLES, T0, THREAD_COUNT
+    DENUNCIATION_EXPIRE_PERIODS, ENDORSEMENT_COUNT, GENESIS_TIMESTAMP, INITIAL_DRAW_SEED,
+    MAX_ASYNC_POOL_LENGTH, MAX_BOOTSTRAP_FINAL_STATE_PARTS_SIZE,
+    MAX_BOOTSTRAP_VERSIONING_ELEMENTS_SIZE, MAX_DATASTORE_KEY_LENGTH, MAX_DATASTORE_VALUE_LENGTH,
+    MAX_DEFERRED_CREDITS_LENGTH, MAX_DENUNCIATIONS_PER_BLOCK_HEADER,
+    MAX_DENUNCIATION_CHANGES_LENGTH, MAX_FUNCTION_NAME_LENGTH, MAX_PARAMETERS_SIZE,
+    MAX_PRODUCTION_STATS_LENGTH, MAX_ROLLS_COUNT_LENGTH, MIP_STORE_STATS_BLOCK_CONSIDERED,
+    PERIODS_PER_CYCLE, POS_SAVED_CYCLES, T0, THREAD_COUNT,
 };
 use massa_pos_exports::PoSConfig;
 use massa_versioning::versioning::MipStatsConfig;
@@ -21,7 +27,7 @@ pub fn get_db_config(path: PathBuf) -> MassaDBConfig {
     }
 }
 
-pub fn get_ledger_config(path: PathBuf) -> LedgerConfig {
+pub fn get_ledger_config() -> LedgerConfig {
     LedgerConfig {
         thread_count: THREAD_COUNT,
         initial_ledger_path: PathBuf::new(),
@@ -79,7 +85,7 @@ pub fn get_final_state_config(
     path: PathBuf,
     initial_rolls_path: Option<PathBuf>,
 ) -> FinalStateConfig {
-    let ledger_config = get_ledger_config(path.clone());
+    let ledger_config = get_ledger_config();
     let async_pool_config = get_async_pool_config();
     let pos_config = get_pos_config();
     let executed_ops_config = get_executed_ops_config();

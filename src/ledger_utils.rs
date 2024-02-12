@@ -1,12 +1,12 @@
-use std::collections::BTreeMap;
-use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::Rng;
+use std::collections::BTreeMap;
 
-use massa_signature::KeyPair;
 use massa_ledger_exports::{LedgerChanges, LedgerEntry, SetUpdateOrDelete};
 use massa_models::address::Address;
 use massa_models::amount::Amount;
 use massa_models::bytecode::Bytecode;
+use massa_signature::KeyPair;
 
 use crate::FillLedgerArgs;
 
@@ -15,7 +15,11 @@ fn generate_random_vector(size: usize, rng: &mut ThreadRng) -> Vec<u8> {
     (0..size).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>()
 }
 
-pub fn create_ledger_entry(args: &FillLedgerArgs, changes: &mut LedgerChanges, rng: &mut ThreadRng) -> usize {
+pub fn create_ledger_entry(
+    args: &FillLedgerArgs,
+    changes: &mut LedgerChanges,
+    rng: &mut ThreadRng,
+) -> usize {
     let mut sz = 0;
     let mut datastore = BTreeMap::default();
 

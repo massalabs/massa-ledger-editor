@@ -4,30 +4,32 @@ mod ledger_utils;
 mod versioning;
 mod wrapped_massa_db;
 
-use std::{path::PathBuf, sync::Arc};
-use std::time::{Duration, Instant};
 use bytesize::ByteSize;
+use std::time::{Duration, Instant};
+use std::{path::PathBuf, sync::Arc};
 
-use parking_lot::RwLock;
 use clap::Parser;
+use parking_lot::RwLock;
 use rand::rngs::ThreadRng;
 
 use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
-use massa_final_state::{FinalStateController, FinalState};
+use massa_final_state::{FinalState, FinalStateController};
 use massa_ledger_exports::KeyDeserializer;
+use massa_ledger_exports::LedgerChanges;
 use massa_ledger_worker::FinalLedger;
-use massa_models::config::{T0, THREAD_COUNT};
-use massa_models::slot::Slot;
 use massa_models::address::Address;
+use massa_models::config::{T0, THREAD_COUNT};
 use massa_models::prehash::PreHashMap;
+use massa_models::slot::Slot;
 use massa_pos_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
 use massa_time::MassaTime;
 use massa_versioning::versioning::MipStore;
-use massa_ledger_exports::LedgerChanges;
 
 use crate::args::{Cli, Commands, ConvertLedgerArgs, FillLedgerArgs, UpdateMipStoreArgs};
-use crate::config::{get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config};
+use crate::config::{
+    get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config,
+};
 use crate::ledger_utils::create_ledger_entry;
 use crate::versioning::get_mip_list;
 use crate::wrapped_massa_db::WrappedMassaDB;
@@ -61,11 +63,9 @@ fn main() {
 }
 
 fn get_final_state(cli: Cli) -> Arc<RwLock<FinalState>> {
-
     let db_config = get_db_config(cli.path.clone());
-    let ledger_config = get_ledger_config(cli.path.clone());
-    let final_state_config =
-        get_final_state_config(cli.path, Some(cli.initial_rolls_path.clone()));
+    let ledger_config = get_ledger_config();
+    let final_state_config = get_final_state_config(cli.path, Some(cli.initial_rolls_path.clone()));
     let mip_stats_config = get_mip_stats_config();
 
     let convert_ledger = matches!(cli.command, Commands::ConvertLedger(..));
@@ -81,7 +81,8 @@ fn get_final_state(cli: Cli) -> Arc<RwLock<FinalState>> {
     println!("mip store: {:?}", mip_store);
 
     let selector_controller = Box::new(MockSelectorController::new());
-    let final_state = Arc::new(parking_lot::RwLock::new(
+
+    Arc::new(parking_lot::RwLock::new(
         FinalState::new(
             db.clone(),
             final_state_config,
@@ -90,18 +91,18 @@ fn get_final_state(cli: Cli) -> Arc<RwLock<FinalState>> {
             mip_store,
             false,
         )
-            .expect("could not init final state"),
-    ));
-
-    final_state
+        .expect("could not init final state"),
+    ))
 }
 
-fn convert_ledger(final_state: Arc<RwLock<FinalState>>, initial_rolls_path: PathBuf, args: ConvertLedgerArgs) {
-
+fn convert_ledger(
+    final_state: Arc<RwLock<FinalState>>,
+    initial_rolls_path: PathBuf,
+    args: ConvertLedgerArgs,
+) {
     let new_db_config = get_db_config(args.output_path.clone());
-    let new_ledger_config = get_ledger_config(args.output_path.clone());
-    let new_final_state_config =
-        get_final_state_config(args.output_path, Some(initial_rolls_path));
+    let new_ledger_config = get_ledger_config();
+    let new_final_state_config = get_final_state_config(args.output_path, Some(initial_rolls_path));
     let new_mip_stats_config = get_mip_stats_config();
 
     let new_wrapped_db = WrappedMassaDB::new(new_db_config, false, true);
@@ -123,7 +124,7 @@ fn convert_ledger(final_state: Arc<RwLock<FinalState>>, initial_rolls_path: Path
             new_mip_store,
             false,
         )
-            .expect("could not init final state"),
+        .expect("could not init final state"),
     ));
 
     convert_from_testnet22_ledger_to_testnet23_ledger(final_state.clone(), new_final_state);
@@ -304,10 +305,12 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
 }
 
 fn edit_ledger(final_state: Arc<RwLock<FinalState>>) {
-
     println!("Editing ledger...");
 
-    final_state.write().init_execution_trail_hash();
+    let mut batch = DBBatch::new();
+    final_state
+        .write()
+        .init_execution_trail_hash_to_batch(&mut batch);
 
     let db_valid = final_state.write().is_db_valid();
     println!("DB valid: {}", db_valid);
@@ -324,9 +327,9 @@ fn edit_ledger(final_state: Arc<RwLock<FinalState>>) {
 
     // Apply the change to the batch
     /*final_state
-        .write()
-        .ledger
-        .apply_changes_to_batch(changes, &mut state_batch);*/
+    .write()
+    .ledger
+    .apply_changes_to_batch(changes, &mut state_batch);*/
 
     // Write the batch to the DB
     //db.write().write_batch(state_batch, versioning_batch, None);
@@ -342,7 +345,6 @@ fn scan_ledger(final_state: Arc<RwLock<FinalState>>) {
 }
 
 fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
-
     let mut slot = final_state
         .read()
         .db
@@ -354,7 +356,10 @@ fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
 
     // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
     // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024;
-    let target_ = args.target_ledger_size.parse::<ByteSize>().expect("Cannot parse ledger size");
+    let target_ = args
+        .target_ledger_size
+        .parse::<ByteSize>()
+        .expect("Cannot parse ledger size");
     let target: u64 = target_.as_u64();
     let mut added: usize = 0;
     println!("Filling the ledger with {target} bytes (original: {target_})");
@@ -402,7 +407,6 @@ fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
     db.write().flush().expect("Error while flushing DB");
 }
 
-
 fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
     let mut all_u32 = all;
     let telapsed = start.elapsed();
@@ -421,7 +425,6 @@ fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
 }
 
 fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreArgs) {
-
     let mut guard = final_state.write();
     let shutdown_start: Slot = Slot::new(args.shutdown_start, 0);
     let shutdown_end: Slot = Slot::new(args.shutdown_end, 0);
@@ -465,5 +468,4 @@ fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreAr
         .write()
         .write_batch(db_batch, db_versioning_batch, None);
     println!("Done.");
-
 }

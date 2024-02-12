@@ -6,11 +6,7 @@ use clap::{Args, Parser, Subcommand};
 #[command(name = "massa-ledger-editor")]
 #[command(about = "Ledger editor", long_about = None)]
 pub struct Cli {
-    #[arg(
-        short = 'p',
-        long = "path",
-        help = "Path of an existing db"
-    )]
+    #[arg(short = 'p', long = "path", help = "Path of an existing db")]
     pub(crate) path: PathBuf,
     #[arg(
         short = 'r',
@@ -32,7 +28,9 @@ pub(crate) enum Commands {
     ScanLedger,
     #[command(about = "Fill ledger with random values")]
     FillLedger(FillLedgerArgs),
-    #[command(about = "Update MIP store (after a network shutdown) ensuring MIP info are coherent")]
+    #[command(
+        about = "Update MIP store (after a network shutdown) ensuring MIP info are coherent"
+    )]
     UpdateMipStore(UpdateMipStoreArgs),
 }
 
@@ -54,39 +52,20 @@ pub struct FillLedgerArgs {
         help = "Ledger size expected (ex: 10Mb, 1.5Gb)"
     )]
     pub(crate) target_ledger_size: String,
-    #[arg(
-        default_value = "205",
-        help = ""
-    )]
+    #[arg(default_value = "205", help = "")]
     pub(crate) datastore_key_size: usize,
-    #[arg(
-        default_value = "9999989",
-        help = ""
-    )]
+    #[arg(default_value = "9999989", help = "")]
     pub(crate) datastore_value_size: usize,
-    #[arg(
-        default_value = "9999989",
-        help = ""
-    )]
+    #[arg(default_value = "9999989", help = "")]
     pub(crate) bytecode_size: usize,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Args)]
 pub struct UpdateMipStoreArgs {
-    #[arg(
-    long = "shutdown_start",
-    help = ""
-    )]
+    #[arg(long = "shutdown_start", help = "")]
     pub(crate) shutdown_start: u64,
-    #[arg(
-    long = "shutdown_end",
-    help = ""
-    )]
+    #[arg(long = "shutdown_end", help = "")]
     pub(crate) shutdown_end: u64,
-    #[arg(
-    long = "genesis_timestamp",
-    help = ""
-    )]
+    #[arg(long = "genesis_timestamp", help = "")]
     pub(crate) genesis_timestamp: u64,
 }
