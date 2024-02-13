@@ -11,7 +11,6 @@ use std::{path::PathBuf, sync::Arc};
 use clap::Parser;
 use parking_lot::RwLock;
 use rand::rngs::ThreadRng;
-
 use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
 use massa_final_state::{FinalState, FinalStateController};
 use massa_ledger_exports::KeyDeserializer;
@@ -307,14 +306,67 @@ fn convert_from_testnet22_ledger_to_testnet23_ledger(
 fn edit_ledger(final_state: Arc<RwLock<FinalState>>) {
     println!("Editing ledger...");
 
-    let mut batch = DBBatch::new();
-    final_state
-        .write()
-        .init_execution_trail_hash_to_batch(&mut batch);
+    // Here, we can create any state / versioning change we want to the final state
+    let final_state_write = final_state.write();
 
-    let db_valid = final_state.write().is_db_valid();
-    println!("DB valid: {}", db_valid);
-    /*// Here, we can create any state / versioning change we want
+    // *************************************************************
+    // **  EXAMPLE 1: ADD ROLLS TO AN ADDRESS FOR THE LAST CYCLE  **
+    // *************************************************************
+    // NOTE 1: If you want this address to stake on a network restart,
+    // the last start period should be at least 3 cycles after the last cycle before downtime
+    // NOTE 2: This code is mainly from the downtime interpolator in FinalState.
+    /*use std::str::FromStr;
+    use massa_final_state::FinalStateError;
+    final_state_write.recompute_caches();
+    let current_slot = final_state_write.get_slot();
+    let end_slot = final_state_write.get_slot().get_next_slot(THREAD_COUNT).unwrap();
+    let latest_snapshot_cycle = final_state_write.pos_state.cycle_history_cache.back().cloned().ok_or(
+        FinalStateError::SnapshotError(String::from(
+            "Impossible to interpolate the downtime: no cycle in the given snapshot",
+        )),
+    ).unwrap();
+    let mut latest_snapshot_cycle_info = final_state_write
+        .pos_state
+        .get_cycle_info(latest_snapshot_cycle.0)
+        .ok_or_else(|| FinalStateError::SnapshotError(String::from("Missing cycle info"))).unwrap();
+    latest_snapshot_cycle_info.roll_counts.insert(Address::from_str("AU1wN8rn4SkwYSTDF3dHFY4U28KtsqKL1NnEjDZhHnHEy6cEQm53").unwrap(), 1000000);
+    let mut batch = DBBatch::new();
+    final_state_write.pos_state
+        .cycle_history_cache
+        .pop_back()
+        .ok_or(FinalStateError::SnapshotError(String::from(
+            "Impossible to interpolate the downtime: no cycle in the given snapshot",
+        ))).unwrap();
+    final_state_write.pos_state
+        .delete_cycle_info(latest_snapshot_cycle.0, &mut batch);
+    final_state_write.pos_state
+        .db
+        .write()
+        .write_batch(batch, Default::default(), Some(end_slot));
+    let mut batch = DBBatch::new();
+    final_state_write.pos_state
+        .create_new_cycle_from_last(
+            &latest_snapshot_cycle_info,
+            current_slot
+                .get_next_slot(THREAD_COUNT)
+                .expect("Cannot get next slot"),
+            end_slot,
+            &mut batch,
+        )
+        .map_err(|err| FinalStateError::PosError(format!("{}", err))).unwrap();
+    final_state_write.pos_state
+        .db
+        .write()
+        .write_batch(batch, Default::default(), Some(end_slot));*/
+
+    // ********************************************
+    // **  EXAMPLE 2: ADD A NEW VALUE IN LEDGER  **
+    // ********************************************
+    /*use massa_ledger_exports::{SetUpdateOrDelete, LedgerEntry};
+    use massa_models::{amount::Amount, bytecode::Bytecode};
+    use std::collections::BTreeMap;
+    let mut state_batch = DBBatch::new();
+    let versioning_batch = DBBatch::new();
     let mut changes = LedgerChanges(PreHashMap::default());
     changes.0.insert(
         Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
@@ -323,16 +375,17 @@ fn edit_ledger(final_state: Arc<RwLock<FinalState>>) {
             bytecode: Bytecode(Vec::new()),
             datastore: BTreeMap::default(),
         }),
-    );*/
-
+    );
     // Apply the change to the batch
-    /*final_state
-    .write()
-    .ledger
-    .apply_changes_to_batch(changes, &mut state_batch);*/
-
+    final_state_write
+        .ledger
+        .apply_changes_to_batch(changes, &mut state_batch);
     // Write the batch to the DB
-    //db.write().write_batch(state_batch, versioning_batch, None);
+    final_state_write.db.write().write_batch(state_batch, versioning_batch, None);*/
+
+    // CHECK THAT THE DB IS STILL VALID AFTER EDITING
+    let db_valid = final_state_write.is_db_valid();
+    println!("DB valid: {}", db_valid);
 }
 
 fn scan_ledger(final_state: Arc<RwLock<FinalState>>) {
