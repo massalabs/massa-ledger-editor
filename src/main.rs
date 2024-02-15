@@ -478,6 +478,7 @@ fn calc_time_left(start: &Instant, done: usize, all: u64) -> Duration {
 }
 
 fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreArgs) {
+    let db = final_state.read().db.clone();
     let mut guard = final_state.write();
     let shutdown_start: Slot = Slot::new(args.shutdown_start, 0);
     let shutdown_end: Slot = Slot::new(args.shutdown_end, 0);
@@ -511,8 +512,7 @@ fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreAr
 
     // Cleanup db (as we are going to rewrite all versioning entries)
     println!("Reset DB (versioning)...");
-    // guard.mip_store.reset_db(db.clone());
-    guard.mip_store.reset_db(final_state.read().db.clone());
+    guard.mip_store.reset_db(db);
 
     // Write updated entries
     println!("Writing MIP store...");
