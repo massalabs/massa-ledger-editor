@@ -25,3 +25,9 @@ cargo run -- --path ../massa/massa-node/storage/testnet22_ledger/rocks_db/ -r ..
 ```commandline
 cargo run -- -p ~/dev/massa3/massa-node/storage/ledger/rocks_db/ -r ~/dev/massa3/massa-node/base_config/initial_rolls.json fill-ledger -s 0.65G
 ```
+
+- Case 4: Versioning
+
+```commandline
+cargo run -- --path ~/dev/massa3/massa-node/storage/ledger/rocks_db/ --output-path ~/dev/massa3/massa-node/storage/ledger/rocks_db_2/ --initial-rolls-path {initial_rolls_path}" --update-mip-store --shutdown-start {last_period + 1} --shutdown-end {period_restart_at} --genesis-timestamp {genesis_timestamp}
+```
