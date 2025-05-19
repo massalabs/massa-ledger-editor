@@ -12,7 +12,7 @@ use crate::FillLedgerArgs;
 
 #[inline]
 fn generate_random_vector(size: usize, rng: &mut ThreadRng) -> Vec<u8> {
-    (0..size).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>()
+    (0..size).map(|_| rng.random::<u8>()).collect::<Vec<u8>>()
 }
 
 pub fn create_ledger_entry(

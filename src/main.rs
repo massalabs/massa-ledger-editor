@@ -1,5 +1,6 @@
 mod args;
 mod config;
+mod export;
 mod ledger_utils;
 mod versioning;
 mod wrapped_massa_db;
@@ -9,8 +10,6 @@ use std::time::{Duration, Instant};
 use std::{path::PathBuf, sync::Arc};
 
 use clap::Parser;
-use parking_lot::RwLock;
-use rand::rngs::ThreadRng;
 use massa_db_exports::{DBBatch, MassaDBController, MassaIteratorMode, LEDGER_PREFIX};
 use massa_final_state::{FinalState, FinalStateController};
 use massa_ledger_exports::KeyDeserializer;
@@ -24,11 +23,14 @@ use massa_pos_exports::MockSelectorController;
 use massa_serialization::{DeserializeError, Deserializer};
 use massa_time::MassaTime;
 use massa_versioning::versioning::MipStore;
+use parking_lot::RwLock;
+use rand::rngs::ThreadRng;
 
 use crate::args::{Cli, Commands, ConvertLedgerArgs, FillLedgerArgs, UpdateMipStoreArgs};
 use crate::config::{
     get_db_config, get_final_state_config, get_ledger_config, get_mip_stats_config,
 };
+use crate::export::export_ledger;
 use crate::ledger_utils::create_ledger_entry;
 use crate::versioning::get_mip_list;
 use crate::wrapped_massa_db::WrappedMassaDB;
@@ -57,6 +59,9 @@ fn main() {
         }
         Commands::UpdateMipStore(args_) => {
             update_mip_store(final_state, args_);
+        }
+        Commands::ExportLedger(args_) => {
+            export_ledger(final_state, args_);
         }
     }
 }
@@ -315,73 +320,74 @@ fn edit_ledger(final_state: Arc<RwLock<FinalState>>) {
     // NOTE 1: If you want this address to stake on a network restart,
     // the last start period should be at least 3 cycles after the last cycle before downtime
     // NOTE 2: This code is mainly from the downtime interpolator in FinalState.
-    /*use std::str::FromStr;
-    use massa_final_state::FinalStateError;
-    final_state_write.recompute_caches();
-    let current_slot = final_state_write.get_slot();
-    let end_slot = final_state_write.get_slot().get_next_slot(THREAD_COUNT).unwrap();
-    let latest_snapshot_cycle = final_state_write.pos_state.cycle_history_cache.back().cloned().ok_or(
-        FinalStateError::SnapshotError(String::from(
-            "Impossible to interpolate the downtime: no cycle in the given snapshot",
-        )),
-    ).unwrap();
-    let mut latest_snapshot_cycle_info = final_state_write
-        .pos_state
-        .get_cycle_info(latest_snapshot_cycle.0)
-        .ok_or_else(|| FinalStateError::SnapshotError(String::from("Missing cycle info"))).unwrap();
-    latest_snapshot_cycle_info.roll_counts.insert(Address::from_str("AU1wN8rn4SkwYSTDF3dHFY4U28KtsqKL1NnEjDZhHnHEy6cEQm53").unwrap(), 1000000);
-    let mut batch = DBBatch::new();
-    final_state_write.pos_state
-        .cycle_history_cache
-        .pop_back()
-        .ok_or(FinalStateError::SnapshotError(String::from(
-            "Impossible to interpolate the downtime: no cycle in the given snapshot",
-        ))).unwrap();
-    final_state_write.pos_state
-        .delete_cycle_info(latest_snapshot_cycle.0, &mut batch);
-    final_state_write.pos_state
-        .db
-        .write()
-        .write_batch(batch, Default::default(), Some(end_slot));
-    let mut batch = DBBatch::new();
-    final_state_write.pos_state
-        .create_new_cycle_from_last(
-            &latest_snapshot_cycle_info,
-            current_slot
-                .get_next_slot(THREAD_COUNT)
-                .expect("Cannot get next slot"),
-            end_slot,
-            &mut batch,
-        )
-        .map_err(|err| FinalStateError::PosError(format!("{}", err))).unwrap();
-    final_state_write.pos_state
-        .db
-        .write()
-        .write_batch(batch, Default::default(), Some(end_slot));*/
+    // use std::str::FromStr;
+    // use massa_final_state::FinalStateError;
+    // final_state_write.recompute_caches();
+    // let current_slot = final_state_write.get_slot();
+    // let end_slot = final_state_write.get_slot().get_next_slot(THREAD_COUNT).unwrap();
+    // let latest_snapshot_cycle =
+    // final_state_write.pos_state.cycle_history_cache.back().cloned().ok_or(
+    // FinalStateError::SnapshotError(String::from(
+    // "Impossible to interpolate the downtime: no cycle in the given snapshot",
+    // )),
+    // ).unwrap();
+    // let mut latest_snapshot_cycle_info = final_state_write
+    // .pos_state
+    // .get_cycle_info(latest_snapshot_cycle.0)
+    // .ok_or_else(|| FinalStateError::SnapshotError(String::from("Missing cycle info"))).unwrap();
+    // latest_snapshot_cycle_info.roll_counts.insert(Address::from_str("
+    // AU1wN8rn4SkwYSTDF3dHFY4U28KtsqKL1NnEjDZhHnHEy6cEQm53").unwrap(), 1000000); let mut batch
+    // = DBBatch::new(); final_state_write.pos_state
+    // .cycle_history_cache
+    // .pop_back()
+    // .ok_or(FinalStateError::SnapshotError(String::from(
+    // "Impossible to interpolate the downtime: no cycle in the given snapshot",
+    // ))).unwrap();
+    // final_state_write.pos_state
+    // .delete_cycle_info(latest_snapshot_cycle.0, &mut batch);
+    // final_state_write.pos_state
+    // .db
+    // .write()
+    // .write_batch(batch, Default::default(), Some(end_slot));
+    // let mut batch = DBBatch::new();
+    // final_state_write.pos_state
+    // .create_new_cycle_from_last(
+    // &latest_snapshot_cycle_info,
+    // current_slot
+    // .get_next_slot(THREAD_COUNT)
+    // .expect("Cannot get next slot"),
+    // end_slot,
+    // &mut batch,
+    // )
+    // .map_err(|err| FinalStateError::PosError(format!("{}", err))).unwrap();
+    // final_state_write.pos_state
+    // .db
+    // .write()
+    // .write_batch(batch, Default::default(), Some(end_slot));
 
     // ********************************************
     // **  EXAMPLE 2: ADD A NEW VALUE IN LEDGER  **
     // ********************************************
-    /*use massa_ledger_exports::{SetUpdateOrDelete, LedgerEntry};
-    use massa_models::{amount::Amount, bytecode::Bytecode};
-    use std::collections::BTreeMap;
-    let mut state_batch = DBBatch::new();
-    let versioning_batch = DBBatch::new();
-    let mut changes = LedgerChanges(PreHashMap::default());
-    changes.0.insert(
-        Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
-        SetUpdateOrDelete::Set(LedgerEntry {
-            balance: Amount::from_mantissa_scale(100, 0).unwrap(),
-            bytecode: Bytecode(Vec::new()),
-            datastore: BTreeMap::default(),
-        }),
-    );
+    // use massa_ledger_exports::{SetUpdateOrDelete, LedgerEntry};
+    // use massa_models::{amount::Amount, bytecode::Bytecode};
+    // use std::collections::BTreeMap;
+    // let mut state_batch = DBBatch::new();
+    // let versioning_batch = DBBatch::new();
+    // let mut changes = LedgerChanges(PreHashMap::default());
+    // changes.0.insert(
+    // Address::from_str("AU12dhs6CsQk8AXFTYyUpc1P9e8GDf65ozU6RcigW68qfJV7vdbNf").unwrap(),
+    // SetUpdateOrDelete::Set(LedgerEntry {
+    // balance: Amount::from_mantissa_scale(100, 0).unwrap(),
+    // bytecode: Bytecode(Vec::new()),
+    // datastore: BTreeMap::default(),
+    // }),
+    // );
     // Apply the change to the batch
-    final_state_write
-        .ledger
-        .apply_changes_to_batch(changes, &mut state_batch);
+    // final_state_write
+    // .ledger
+    // .apply_changes_to_batch(changes, &mut state_batch);
     // Write the batch to the DB
-    final_state_write.db.write().write_batch(state_batch, versioning_batch, None);*/
+    // final_state_write.db.write().write_batch(state_batch, versioning_batch, None);
 
     // CHECK THAT THE DB IS STILL VALID AFTER EDITING
     let db_valid = final_state_write.is_db_valid();
@@ -407,8 +413,9 @@ fn fill_ledger(final_state: Arc<RwLock<FinalState>>, args: FillLedgerArgs) {
     let mut rng = ThreadRng::default();
     let db = final_state.read().db.clone();
 
-    // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024 * 1024;
-    // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument") * 1024 * 1024;
+    // let target: u64 = args.target_ledger_size.expect("Target ledger size not passed as argument")
+    // * 1024 * 1024 * 1024; let target: u64 = args.target_ledger_size.expect("Target ledger
+    // size not passed as argument") * 1024 * 1024;
     let target_ = args
         .target_ledger_size
         .parse::<ByteSize>()
@@ -482,12 +489,10 @@ fn update_mip_store(final_state: Arc<RwLock<FinalState>>, args: UpdateMipStoreAr
     let mut guard = final_state.write();
     let shutdown_start: Slot = Slot::new(args.shutdown_start, 0);
     let shutdown_end: Slot = Slot::new(args.shutdown_end, 0);
-    /*
-    let genesis_timestamp = match args.genesis_timestamp {
-        Some(ts) => MassaTime::from_millis(ts),
-        None => *GENESIS_TIMESTAMP,
-    };
-    */
+    // let genesis_timestamp = match args.genesis_timestamp {
+    // Some(ts) => MassaTime::from_millis(ts),
+    // None => *GENESIS_TIMESTAMP,
+    // };
     let genesis_timestamp = MassaTime::from_millis(args.genesis_timestamp);
 
     println!("Updating MIP store...");
