@@ -32,6 +32,8 @@ pub(crate) enum Commands {
         about = "Update MIP store (after a network shutdown) ensuring MIP info are coherent"
     )]
     UpdateMipStore(UpdateMipStoreArgs),
+    #[command(about = "Export ledger to json")]
+    ExportLedger(ExportLedgerArgs),
 }
 
 #[derive(Debug, Clone, PartialEq, Args)]
@@ -68,4 +70,14 @@ pub struct UpdateMipStoreArgs {
     pub(crate) shutdown_end: u64,
     #[arg(long = "genesis_timestamp", help = "")]
     pub(crate) genesis_timestamp: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Args)]
+pub struct ExportLedgerArgs {
+    #[arg(
+        short = 'o',
+        long = "output_path",
+        help = "Path where to write json ledger"
+    )]
+    pub(crate) output_path: PathBuf,
 }
